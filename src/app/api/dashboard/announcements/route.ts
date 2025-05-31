@@ -4,7 +4,15 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value;
+    // Try to get token from cookie first, then from Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
     
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

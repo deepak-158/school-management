@@ -1,31 +1,30 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.db = void 0;
+exports.initializeDatabase = initializeDatabase;
+exports.getDatabase = getDatabase;
+const better_sqlite3_1 = require("better-sqlite3");
+const path_1 = require("path");
 // Get database path from environment or use default
-const DB_PATH = process.env.DATABASE_PATH 
-  ? path.resolve(process.env.DATABASE_PATH) 
-  : path.join(process.cwd(), 'school.db');
-
+const DB_PATH = process.env.DATABASE_PATH
+    ? path_1.default.resolve(process.env.DATABASE_PATH)
+    : path_1.default.join(process.cwd(), 'database', 'school.db');
 // Initialize database with better error handling
-let db: Database.Database;
-
+let db;
 try {
-  db = new Database(DB_PATH);
-  console.log(`Database connected: ${DB_PATH}`);
-} catch (error) {
-  console.error('Failed to initialize database:', error);
-  throw new Error(`Database initialization failed: ${error}`);
+    exports.db = db = new better_sqlite3_1.default(DB_PATH);
+    console.log(`Database connected: ${DB_PATH}`);
 }
-
-export { db };
-
+catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw new Error(`Database initialization failed: ${error}`);
+}
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
-
 // Create tables
-export function initializeDatabase() {
-  // Users table (for all user types)
-  db.exec(`
+function initializeDatabase() {
+    // Users table (for all user types)
+    db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
@@ -41,9 +40,8 @@ export function initializeDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Classes table
-  db.exec(`
+    // Classes table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS classes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -55,9 +53,8 @@ export function initializeDatabase() {
       FOREIGN KEY (class_teacher_id) REFERENCES users(id)
     )
   `);
-
-  // Subjects table
-  db.exec(`
+    // Subjects table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS subjects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -66,9 +63,8 @@ export function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Students table (extends users)
-  db.exec(`
+    // Students table (extends users)
+    db.exec(`
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER UNIQUE NOT NULL,
@@ -85,9 +81,8 @@ export function initializeDatabase() {
       FOREIGN KEY (class_id) REFERENCES classes(id)
     )
   `);
-
-  // Teachers table (extends users)
-  db.exec(`
+    // Teachers table (extends users)
+    db.exec(`
     CREATE TABLE IF NOT EXISTS teachers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER UNIQUE NOT NULL,
@@ -101,9 +96,8 @@ export function initializeDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
-
-  // Teacher-Subject assignments
-  db.exec(`
+    // Teacher-Subject assignments
+    db.exec(`
     CREATE TABLE IF NOT EXISTS teacher_subjects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       teacher_id INTEGER NOT NULL,
@@ -116,9 +110,8 @@ export function initializeDatabase() {
       UNIQUE(teacher_id, subject_id, class_id)
     )
   `);
-
-  // Timetable table
-  db.exec(`
+    // Timetable table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS timetable (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_id INTEGER NOT NULL,
@@ -134,9 +127,8 @@ export function initializeDatabase() {
       FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE
     )
   `);
-
-  // Attendance table
-  db.exec(`
+    // Attendance table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS attendance (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       student_id INTEGER NOT NULL,
@@ -154,9 +146,8 @@ export function initializeDatabase() {
       UNIQUE(student_id, date, subject_id)
     )
   `);
-
-  // Results/Grades table
-  db.exec(`
+    // Results/Grades table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS results (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       student_id INTEGER NOT NULL,
@@ -176,9 +167,8 @@ export function initializeDatabase() {
       FOREIGN KEY (teacher_id) REFERENCES teachers(id)
     )
   `);
-
-  // Announcements table
-  db.exec(`
+    // Announcements table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS announcements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -194,8 +184,8 @@ export function initializeDatabase() {
       FOREIGN KEY (target_class_id) REFERENCES classes(id)
     )
   `);
-  // Leave requests table
-  db.exec(`
+    // Leave requests table
+    db.exec(`
     CREATE TABLE IF NOT EXISTS leave_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -212,14 +202,11 @@ export function initializeDatabase() {
       FOREIGN KEY (approved_by) REFERENCES users(id)
     )
   `);
-
-  console.log('Database tables created successfully!');
+    console.log('Database tables created successfully!');
 }
-
 // Helper function to get database instance
-export function getDatabase() {
-  return db;
+function getDatabase() {
+    return db;
 }
-
 // Initialize the database when this module is imported
 initializeDatabase();

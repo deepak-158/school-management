@@ -4,7 +4,15 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value;
+    // Try to get token from cookie first, then from Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
     
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -13,13 +21,9 @@ export async function GET(request: NextRequest) {
     const decoded = verifyToken(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const db = getDatabase();
-    let profile = {};
-
-    // Get basic user info
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.userId) as any;
+    }    const db = getDatabase();
+    let profile = {};    // Get basic user info
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.id) as any;
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -28,6 +32,11 @@ export async function GET(request: NextRequest) {
       username: user.username,
       email: user.email,
       role: user.role,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      phone: user.phone,
+      address: user.address,
+      date_of_birth: user.date_of_birth,
     };
 
     // Get role-specific information
@@ -43,12 +52,13 @@ export async function GET(request: NextRequest) {
         profile = {
           ...profile,
           student_id: student.student_id,
-          full_name: student.full_name,
-          date_of_birth: student.date_of_birth,
-          phone: student.phone,
-          address: student.address,
-          parent_guardian: student.parent_guardian,
           class_name: student.class_name,
+          roll_number: student.roll_number,
+          admission_date: student.admission_date,
+          guardian_name: student.guardian_name,
+          guardian_phone: student.guardian_phone,
+          guardian_email: student.guardian_email,
+          blood_group: student.blood_group,
         };
       }
     } else if (decoded.role === 'teacher') {
@@ -66,10 +76,10 @@ export async function GET(request: NextRequest) {
         profile = {
           ...profile,
           employee_id: teacher.employee_id,
-          full_name: teacher.full_name,
-          phone: teacher.phone,
-          address: teacher.address,
           department: teacher.department,
+          qualification: teacher.qualification,
+          experience_years: teacher.experience_years,
+          joining_date: teacher.joining_date,
           subjects: subjects?.subjects || 'None assigned',
         };
       }
@@ -94,20 +104,27 @@ export async function PUT(request: NextRequest) {
     const decoded = verifyToken(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const data = await request.json();
+    }    const data = await request.json();
     const db = getDatabase();
 
     // Update basic user info
-    if (data.username || data.email) {
-      db.prepare(`
-        UPDATE users 
-        SET username = COALESCE(?, username),
-            email = COALESCE(?, email)
-        WHERE id = ?
-      `).run(data.username, data.email, decoded.userId);
-    }
+    db.prepare(`
+      UPDATE users 
+      SET first_name = COALESCE(?, first_name),
+          last_name = COALESCE(?, last_name),
+          phone = COALESCE(?, phone),
+          address = COALESCE(?, address),
+          date_of_birth = COALESCE(?, date_of_birth),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      data.first_name,
+      data.last_name, 
+      data.phone,
+      data.address,
+      data.date_of_birth,
+      decoded.userId
+    );
 
     // Update role-specific information
     if (decoded.role === 'student') {
@@ -115,18 +132,16 @@ export async function PUT(request: NextRequest) {
       if (student) {
         db.prepare(`
           UPDATE students 
-          SET full_name = COALESCE(?, full_name),
-              date_of_birth = COALESCE(?, date_of_birth),
-              phone = COALESCE(?, phone),
-              address = COALESCE(?, address),
-              parent_guardian = COALESCE(?, parent_guardian)
+          SET guardian_name = COALESCE(?, guardian_name),
+              guardian_phone = COALESCE(?, guardian_phone),
+              guardian_email = COALESCE(?, guardian_email),
+              blood_group = COALESCE(?, blood_group)
           WHERE user_id = ?
         `).run(
-          data.full_name,
-          data.date_of_birth,
-          data.phone,
-          data.address,
-          data.parent_guardian,
+          data.guardian_name,
+          data.guardian_phone,
+          data.guardian_email,
+          data.blood_group,
           decoded.userId
         );
       }
@@ -135,16 +150,12 @@ export async function PUT(request: NextRequest) {
       if (teacher) {
         db.prepare(`
           UPDATE teachers 
-          SET full_name = COALESCE(?, full_name),
-              phone = COALESCE(?, phone),
-              address = COALESCE(?, address),
-              department = COALESCE(?, department)
+          SET department = COALESCE(?, department),
+              qualification = COALESCE(?, qualification)
           WHERE user_id = ?
         `).run(
-          data.full_name,
-          data.phone,
-          data.address,
           data.department,
+          data.qualification,
           decoded.userId
         );
       }

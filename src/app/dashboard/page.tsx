@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Users,
   BookOpen,
@@ -228,19 +229,16 @@ export default function DashboardPage() {
               {user?.role === 'teacher' && 'Manage your classes, students, and academic activities.'}
               {user?.role === 'principal' && 'Oversee school operations and manage the entire institution.'}
             </p>
-          </div>
-
-          {/* Stats Cards */}
+          </div>          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {statsCards.map((card, index) => {
               const Icon = card.icon;
               return (
-                <a
+                <Link
                   key={index}
                   href={card.href}
                   className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200"
-                >
-                  <div className="flex items-center justify-between">
+                >                  <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
                       <p className="text-3xl font-bold text-gray-900">{card.value}</p>
@@ -249,7 +247,7 @@ export default function DashboardPage() {
                       <Icon className="h-6 w-6" />
                     </div>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -261,12 +259,12 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                   <Bell className="h-5 w-5 mr-2" />
                   Recent Announcements
-                </h2>                <a
+                </h2>                <Link
                   href="/announcements"
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
                   View all
-                </a>
+                </Link>
               </div>
             </div>
             <div className="p-6">
@@ -312,7 +310,7 @@ export default function DashboardPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">                {user?.role === 'student' && (
                   <>
-                    <a
+                    <Link
                       href="/timetable"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -321,8 +319,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">View Timetable</h3>
                         <p className="text-sm text-gray-600">Check your class schedule</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/results"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -331,8 +329,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">View Results</h3>
                         <p className="text-sm text-gray-600">Check your academic performance</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/leave-application"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -341,11 +339,11 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Leave Request</h3>
                         <p className="text-sm text-gray-600">Apply for leave</p>
                       </div>
-                    </a>
+                    </Link>
                   </>
                 )}                {user?.role === 'teacher' && (
                   <>
-                    <a
+                    <Link
                       href="/attendance"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -354,8 +352,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Mark Attendance</h3>
                         <p className="text-sm text-gray-600">Record student attendance</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/manage-results"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -364,8 +362,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Enter Results</h3>
                         <p className="text-sm text-gray-600">Record student grades</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/announcements"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -374,11 +372,11 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Create Announcement</h3>
                         <p className="text-sm text-gray-600">Share updates with students</p>
                       </div>
-                    </a>
+                    </Link>
                   </>
                 )}                {user?.role === 'principal' && (
                   <>
-                    <a
+                    <Link
                       href="/users"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -387,8 +385,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Manage Users</h3>
                         <p className="text-sm text-gray-600">Add or edit users</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/analytics"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -397,8 +395,8 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">View Analytics</h3>
                         <p className="text-sm text-gray-600">School performance insights</p>
                       </div>
-                    </a>
-                    <a
+                    </Link>
+                    <Link
                       href="/leave-approvals"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
@@ -407,7 +405,7 @@ export default function DashboardPage() {
                         <h3 className="font-medium text-gray-900">Leave Approvals</h3>
                         <p className="text-sm text-gray-600">Review pending requests</p>
                       </div>
-                    </a>
+                    </Link>
                   </>
                 )}
               </div>

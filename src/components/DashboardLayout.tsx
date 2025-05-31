@@ -71,6 +71,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     ];    const principalItems = [
       { name: 'Users', href: '/users', icon: Users },
       { name: 'Classes', href: '/classes', icon: BookOpen },
+      { name: 'Class Assignments', href: '/class-assignments', icon: Users },
       { name: 'Timetable', href: '/timetable', icon: Calendar },
       { name: 'Attendance Reports', href: '/attendance', icon: ClipboardList },
       { name: 'Results Overview', href: '/results', icon: BarChart3 },

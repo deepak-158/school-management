@@ -4,7 +4,15 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value;
+    // Try to get token from cookie first, then from Authorization header
+    let token = request.cookies.get('token')?.value;
+    
+    if (!token) {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
     
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -13,9 +21,8 @@ export async function GET(request: NextRequest) {
     const decoded = verifyToken(token);
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    const db = getDatabase();
+    }const db = getDatabase();
+    const today = new Date().toISOString().split('T')[0];
     let stats = {};
 
     switch (decoded.role) {
@@ -27,7 +34,6 @@ export async function GET(request: NextRequest) {
         const totalSubjects = db.prepare('SELECT COUNT(*) as count FROM subjects').get() as { count: number };
         
         // Today's attendance
-        const today = new Date().toISOString().split('T')[0];
         const todayAttendance = db.prepare(`
           SELECT COUNT(*) as present FROM attendance 
           WHERE date = ? AND status = 'present'
@@ -94,9 +100,7 @@ export async function GET(request: NextRequest) {
             ? Math.round((teacherAttendance.present / studentsInClasses.count) * 100) 
             : 0
         };
-        break;
-
-      case 'student':
+        break;      case 'student':
         // Student sees their personal stats
         const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.userId) as any;
         if (!student) {
@@ -122,9 +126,9 @@ export async function GET(request: NextRequest) {
           WHERE student_id = ? AND date LIKE ?
         `).get(student.id, `${thisMonth}%`) as { total: number; present: number };
 
-        // Get latest results
+        // Get latest results - fix column name
         const latestResults = db.prepare(`
-          SELECT COUNT(*) as count, AVG(marks) as avgMarks
+          SELECT COUNT(*) as count, AVG(obtained_marks) as avgMarks
           FROM results 
           WHERE student_id = ?
         `).get(student.id) as { count: number; avgMarks: number };

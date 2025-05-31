@@ -44,48 +44,155 @@ export default function AnalyticsPage() {
       return;
     }
     fetchAnalytics();
-  }, [user, timeRange]);
-
-  const fetchAnalytics = async () => {
+  }, [user, timeRange]);  const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      // Mock data for now - replace with actual API call
-      const mockData: AnalyticsData = {
-        overview: {
-          totalStudents: 450,
-          totalTeachers: 28,
-          totalClasses: 15,
-          avgAttendance: 87.5
-        },
-        attendance: [
-          { month: 'Jan', students: 89, teachers: 96 },
-          { month: 'Feb', students: 85, teachers: 94 },
-          { month: 'Mar', students: 91, teachers: 98 },
-          { month: 'Apr', students: 88, teachers: 95 },
-          { month: 'May', students: 86, teachers: 93 },
-          { month: 'Jun', students: 90, teachers: 97 }
-        ],
-        performance: [
-          { class: 'Class 10A', avgGrade: 85.2, students: 30 },
-          { class: 'Class 10B', avgGrade: 82.7, students: 28 },
-          { class: 'Class 9A', avgGrade: 88.1, students: 32 },
-          { class: 'Class 9B', avgGrade: 79.5, students: 29 },
-          { class: 'Class 8A', avgGrade: 91.3, students: 31 }
-        ],
-        leaveRequests: [
-          { month: 'Jan', approved: 12, rejected: 3, pending: 1 },
-          { month: 'Feb', approved: 8, rejected: 2, pending: 0 },
-          { month: 'Mar', approved: 15, rejected: 4, pending: 2 },
-          { month: 'Apr', approved: 10, rejected: 1, pending: 1 },
-          { month: 'May', approved: 18, rejected: 5, pending: 3 },
-          { month: 'Jun', approved: 14, rejected: 2, pending: 4 }
-        ]
-      };
-      setAnalytics(mockData);
+      setError(null);
+      
+      // Fetch real data from API
+      const response = await fetch('/api/analytics');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setAnalytics(data.analytics);
     } catch (err) {
-      setError('Failed to fetch analytics data');
+      console.error('Failed to fetch analytics:', err);
+      setError('Failed to fetch analytics data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      // Generate and download a comprehensive PDF report
+      const reportData = {
+        generatedAt: new Date().toISOString(),
+        timeRange,
+        ...analytics
+      };
+      
+      // Create a simple text report for now (could be enhanced to PDF later)
+      const reportContent = `
+SCHOOL ANALYTICS REPORT
+Generated: ${new Date().toLocaleDateString()}
+Time Range: ${timeRange}
+
+OVERVIEW:
+- Total Students: ${analytics?.overview.totalStudents}
+- Total Teachers: ${analytics?.overview.totalTeachers}
+- Total Classes: ${analytics?.overview.totalClasses}
+- Average Attendance: ${analytics?.overview.avgAttendance}%
+
+ATTENDANCE TRENDS:
+${analytics?.attendance.map(data => `${data.month}: Students ${data.students}%, Teachers ${data.teachers}%`).join('\n')}
+
+CLASS PERFORMANCE:
+${analytics?.performance.map(data => `${data.class}: ${data.avgGrade.toFixed(1)}% (${data.students} students)`).join('\n')}
+
+LEAVE REQUESTS:
+${analytics?.leaveRequests.map(data => `${data.month}: Approved ${data.approved}, Rejected ${data.rejected}, Pending ${data.pending}`).join('\n')}
+      `;
+
+      // Create and download the report
+      const blob = new Blob([reportContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `school-analytics-report-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      alert('Report generated and downloaded successfully!');
+    } catch (err) {
+      alert('Failed to generate report. Please try again.');
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      if (!analytics) return;
+      
+      // Convert analytics data to CSV format
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      // Overview data
+      csvContent += "Overview Data\n";
+      csvContent += "Metric,Value\n";
+      csvContent += `Total Students,${analytics.overview.totalStudents}\n`;
+      csvContent += `Total Teachers,${analytics.overview.totalTeachers}\n`;
+      csvContent += `Total Classes,${analytics.overview.totalClasses}\n`;
+      csvContent += `Average Attendance,${analytics.overview.avgAttendance}%\n\n`;
+      
+      // Attendance data
+      csvContent += "Attendance Trends\n";
+      csvContent += "Month,Students %,Teachers %\n";
+      analytics.attendance.forEach(data => {
+        csvContent += `${data.month},${data.students},${data.teachers}\n`;
+      });
+      csvContent += "\n";
+      
+      // Performance data
+      csvContent += "Class Performance\n";
+      csvContent += "Class,Average Grade,Student Count\n";
+      analytics.performance.forEach(data => {
+        csvContent += `${data.class},${data.avgGrade},${data.students}\n`;
+      });
+      csvContent += "\n";
+      
+      // Leave requests data
+      csvContent += "Leave Requests\n";
+      csvContent += "Month,Approved,Rejected,Pending\n";
+      analytics.leaveRequests.forEach(data => {
+        csvContent += `${data.month},${data.approved},${data.rejected},${data.pending}\n`;
+      });
+
+      // Create and download the CSV
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `school-analytics-data-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert('Data exported successfully!');
+    } catch (err) {
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
+  const handleScheduleMeeting = () => {
+    // For now, this will show a simple dialog
+    // In a real implementation, this could integrate with calendar systems
+    const meetingTypes = [
+      'Staff Meeting',
+      'Parent-Teacher Conference',
+      'Academic Review Meeting',
+      'Emergency Meeting',
+      'Budget Planning Meeting'
+    ];
+    
+    const selectedType = prompt(`Select meeting type:\n${meetingTypes.map((type, index) => `${index + 1}. ${type}`).join('\n')}\n\nEnter the number (1-5):`);
+    
+    if (selectedType && parseInt(selectedType) >= 1 && parseInt(selectedType) <= 5) {
+      const meetingType = meetingTypes[parseInt(selectedType) - 1];
+      const date = prompt('Enter meeting date (YYYY-MM-DD):');
+      const time = prompt('Enter meeting time (HH:MM):');
+      
+      if (date && time) {
+        // In a real app, this would save to the database
+        alert(`Meeting scheduled successfully!\n\nType: ${meetingType}\nDate: ${date}\nTime: ${time}\n\nThis would normally be saved to the system and notifications sent to relevant staff.`);
+      } else {
+        alert('Meeting scheduling cancelled - missing date or time.');
+      }
+    } else {
+      alert('Meeting scheduling cancelled.');
     }
   };
 
@@ -296,21 +403,28 @@ export default function AnalyticsPage() {
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Quick Actions */}
+        </div>        {/* Quick Actions */}
         <div className="mt-8 bg-white p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={handleGenerateReport}
+              className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-sm font-medium text-gray-900">Generate Report</div>
               <div className="text-xs text-gray-500 mt-1">Create comprehensive school report</div>
             </button>
-            <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={handleExportData}
+              className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-sm font-medium text-gray-900">Export Data</div>
               <div className="text-xs text-gray-500 mt-1">Download analytics data as CSV</div>
             </button>
-            <button className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={handleScheduleMeeting}
+              className="p-4 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <div className="text-sm font-medium text-gray-900">Schedule Meeting</div>
               <div className="text-xs text-gray-500 mt-1">Arrange staff meeting</div>
             </button>

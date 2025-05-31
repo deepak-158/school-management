@@ -131,21 +131,35 @@ export default function ProfilePage() {
               ) : (
                 <p className="text-gray-900 py-2">{profile?.email || 'Not provided'}</p>
               )}
-            </div>
-
-            <div>
+            </div>            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
+                First Name
               </label>
               {editing ? (
                 <input
                   type="text"
-                  value={formData.full_name || ''}
-                  onChange={(e) => handleInputChange('full_name', e.target.value)}
+                  value={formData.first_name || ''}
+                  onChange={(e) => handleInputChange('first_name', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               ) : (
-                <p className="text-gray-900 py-2">{profile?.full_name || 'Not provided'}</p>
+                <p className="text-gray-900 py-2">{profile?.first_name || 'Not provided'}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Last Name
+              </label>
+              {editing ? (
+                <input
+                  type="text"
+                  value={formData.last_name || ''}
+                  onChange={(e) => handleInputChange('last_name', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              ) : (
+                <p className="text-gray-900 py-2">{profile?.last_name || 'Not provided'}</p>
               )}
             </div>
 
@@ -203,21 +217,88 @@ export default function ProfilePage() {
                       {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : 'Not provided'}
                     </p>
                   )}
-                </div>
-                <div>
+                </div>                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Parent/Guardian
+                    Guardian Name
                   </label>
                   {editing ? (
                     <input
                       type="text"
-                      value={formData.parent_guardian || ''}
-                      onChange={(e) => handleInputChange('parent_guardian', e.target.value)}
+                      value={formData.guardian_name || ''}
+                      onChange={(e) => handleInputChange('guardian_name', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   ) : (
-                    <p className="text-gray-900 py-2">{profile?.parent_guardian || 'Not provided'}</p>
+                    <p className="text-gray-900 py-2">{profile?.guardian_name || 'Not provided'}</p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Guardian Phone
+                  </label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      value={formData.guardian_phone || ''}
+                      onChange={(e) => handleInputChange('guardian_phone', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2">{profile?.guardian_phone || 'Not provided'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Guardian Email
+                  </label>
+                  {editing ? (
+                    <input
+                      type="email"
+                      value={formData.guardian_email || ''}
+                      onChange={(e) => handleInputChange('guardian_email', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2">{profile?.guardian_email || 'Not provided'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Blood Group
+                  </label>
+                  {editing ? (
+                    <select
+                      value={formData.blood_group || ''}
+                      onChange={(e) => handleInputChange('blood_group', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Blood Group</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                  ) : (
+                    <p className="text-gray-900 py-2">{profile?.blood_group || 'Not provided'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Roll Number
+                  </label>
+                  <p className="text-gray-900 py-2">{profile?.roll_number || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admission Date
+                  </label>
+                  <p className="text-gray-900 py-2">
+                    {profile?.admission_date ? new Date(profile.admission_date).toLocaleDateString() : 'Not provided'}
+                  </p>
                 </div>
               </>
             )}
@@ -229,8 +310,7 @@ export default function ProfilePage() {
                     Employee ID
                   </label>
                   <p className="text-gray-900 py-2">{profile?.employee_id}</p>
-                </div>
-                <div>
+                </div>                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Department
                   </label>
@@ -244,6 +324,35 @@ export default function ProfilePage() {
                   ) : (
                     <p className="text-gray-900 py-2">{profile?.department || 'Not provided'}</p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Qualification
+                  </label>
+                  {editing ? (
+                    <input
+                      type="text"
+                      value={formData.qualification || ''}
+                      onChange={(e) => handleInputChange('qualification', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <p className="text-gray-900 py-2">{profile?.qualification || 'Not provided'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Experience Years
+                  </label>
+                  <p className="text-gray-900 py-2">{profile?.experience_years || 'Not provided'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Joining Date
+                  </label>
+                  <p className="text-gray-900 py-2">
+                    {profile?.joining_date ? new Date(profile.joining_date).toLocaleDateString() : 'Not provided'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
