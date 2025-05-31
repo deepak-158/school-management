@@ -8,6 +8,23 @@ export async function seedDatabase() {
     // Initialize database first
     initializeDatabase();
 
+    // Temporarily disable foreign key checks
+    db.exec('PRAGMA foreign_keys = OFF');
+
+    // Clear existing data to allow reseeding
+    console.log('Clearing existing data...');
+    db.exec(`
+      DELETE FROM leave_requests;
+      DELETE FROM announcements;
+      DELETE FROM timetable;
+      DELETE FROM teacher_subjects;
+      DELETE FROM students;
+      DELETE FROM teachers;
+      DELETE FROM classes;
+      DELETE FROM subjects;
+      DELETE FROM users;
+    `);
+
     // Create default users
     console.log('Creating default users...');
 
@@ -112,44 +129,43 @@ export async function seedDatabase() {
     `);
 
     teacherStmt.run(teacher1.id, 'T001', 'Mathematics', 'M.Ed Mathematics', 8, '2020-08-15');
-    teacherStmt.run(teacher2.id, 'T002', 'Science', 'M.Sc Physics', 5, '2022-07-20');
-
-    // Create student records
+    teacherStmt.run(teacher2.id, 'T002', 'Science', 'M.Sc Physics', 5, '2022-07-20');    // Create student records
     console.log('Creating student records...');
     const studentStmt = db.prepare(`
       INSERT INTO students (user_id, student_id, class_id, roll_number, admission_date, guardian_name, guardian_phone, guardian_email, blood_group)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    studentStmt.run(student1.id, 'S2024001', 1, 1, '2024-08-01', 'Robert Brown', '+1-555-1001', 'robert.brown@email.com', 'A+');
-    studentStmt.run(student2.id, 'S2024002', 1, 2, '2024-08-01', 'Linda Davis', '+1-555-1002', 'linda.davis@email.com', 'B+');
+    // Get the first class ID
+    const firstClass = db.prepare('SELECT id FROM classes WHERE name = ?').get('Grade 9A') as { id: number };
 
-    // Create teacher-subject assignments
+    studentStmt.run(student1.id, 'S2024001', firstClass.id, 1, '2024-08-01', 'Robert Brown', '+1-555-1001', 'robert.brown@email.com', 'A+');
+    studentStmt.run(student2.id, 'S2024002', firstClass.id, 2, '2024-08-01', 'Linda Davis', '+1-555-1002', 'linda.davis@email.com', 'B+');// Create teacher-subject assignments
     console.log('Creating teacher-subject assignments...');
     const teacherSubjectStmt = db.prepare(`
       INSERT INTO teacher_subjects (teacher_id, subject_id, class_id) VALUES (?, ?, ?)
     `);
 
-    // Teacher 1 teaches Math and English to Class 1
-    teacherSubjectStmt.run(1, 1, 1); // Math
-    teacherSubjectStmt.run(1, 2, 1); // English
+    // Get teacher record IDs
+    const teacher1Record = db.prepare('SELECT id FROM teachers WHERE user_id = ?').get(teacher1.id) as { id: number };
+    const teacher2Record = db.prepare('SELECT id FROM teachers WHERE user_id = ?').get(teacher2.id) as { id: number };    // Teacher 1 teaches Math and English to Class 1
+    teacherSubjectStmt.run(teacher1Record.id, 1, firstClass.id); // Math
+    teacherSubjectStmt.run(teacher1Record.id, 2, firstClass.id); // English
 
     // Teacher 2 teaches Science to Class 1
-    teacherSubjectStmt.run(2, 3, 1); // Science
+    teacherSubjectStmt.run(teacher2Record.id, 3, firstClass.id); // Science
 
     // Create sample timetable
     console.log('Creating sample timetable...');
     const timetableStmt = db.prepare(`
       INSERT INTO timetable (class_id, subject_id, teacher_id, day_of_week, start_time, end_time, room_number)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const timetableEntries = [
-      { class_id: 1, subject_id: 1, teacher_id: 1, day_of_week: 1, start_time: '09:00', end_time: '10:00', room_number: 'Room 101' },
-      { class_id: 1, subject_id: 2, teacher_id: 1, day_of_week: 1, start_time: '10:00', end_time: '11:00', room_number: 'Room 101' },
-      { class_id: 1, subject_id: 3, teacher_id: 2, day_of_week: 1, start_time: '11:15', end_time: '12:15', room_number: 'Lab 1' },
-      { class_id: 1, subject_id: 1, teacher_id: 1, day_of_week: 2, start_time: '09:00', end_time: '10:00', room_number: 'Room 101' },
-      { class_id: 1, subject_id: 3, teacher_id: 2, day_of_week: 2, start_time: '10:00', end_time: '11:00', room_number: 'Lab 1' }
+    `);    const timetableEntries = [
+      { class_id: firstClass.id, subject_id: 1, teacher_id: teacher1Record.id, day_of_week: 1, start_time: '09:00', end_time: '10:00', room_number: 'Room 101' },
+      { class_id: firstClass.id, subject_id: 2, teacher_id: teacher1Record.id, day_of_week: 1, start_time: '10:00', end_time: '11:00', room_number: 'Room 101' },
+      { class_id: firstClass.id, subject_id: 3, teacher_id: teacher2Record.id, day_of_week: 1, start_time: '11:15', end_time: '12:15', room_number: 'Lab 1' },
+      { class_id: firstClass.id, subject_id: 1, teacher_id: teacher1Record.id, day_of_week: 2, start_time: '09:00', end_time: '10:00', room_number: 'Room 101' },
+      { class_id: firstClass.id, subject_id: 3, teacher_id: teacher2Record.id, day_of_week: 2, start_time: '10:00', end_time: '11:00', room_number: 'Lab 1' }
     ];
 
     for (const entry of timetableEntries) {
@@ -198,8 +214,87 @@ export async function seedDatabase() {
         announcement.target_audience,
         announcement.priority,
         announcement.expires_at
-      );
-    }
+      );    }    // Create sample leave requests
+    console.log('Creating sample leave requests...');
+    const leaveRequestStmt = db.prepare(`
+      INSERT INTO leave_requests (
+        user_id, leave_type, start_date, end_date, reason, 
+        status, created_at, approved_by, approval_date, approval_comments
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const currentDate = new Date().toISOString();
+    const futureDate1 = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 7 days from now
+    const futureDate2 = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 14 days from now
+    const futureDate3 = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // 21 days from now
+
+    const leaveRequests = [
+      // Student leave requests
+      {
+        user_id: student1.id,
+        leave_type: 'sick',
+        start_date: futureDate1,
+        end_date: futureDate1,        reason: 'Fever and cold symptoms',
+        status: 'pending',
+        created_at: currentDate,
+        approved_by: null,
+        approval_date: null,
+        approval_comments: null
+      },
+      {
+        user_id: student2.id,
+        leave_type: 'personal',
+        start_date: futureDate2,
+        end_date: futureDate2,
+        reason: 'Family wedding ceremony',
+        status: 'approved',
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        approved_by: teacher1.id,
+        approval_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+        approval_comments: 'Approved for family function. Please catch up on missed lessons.'
+      },
+      // Teacher leave requests
+      {
+        user_id: teacher1.id,
+        leave_type: 'sick',
+        start_date: futureDate3,
+        end_date: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 22 days from now
+        reason: 'Medical checkup and rest',
+        status: 'pending',
+        created_at: currentDate,
+        approved_by: null,
+        approval_date: null,
+        approval_comments: null
+      },
+      {
+        user_id: teacher2.id,
+        leave_type: 'personal',
+        start_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days from now
+        end_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 12 days from now
+        reason: 'Personal work and family commitment',
+        status: 'approved',
+        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+        approved_by: principal.id,
+        approval_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        approval_comments: 'Approved. Please ensure lesson plans are prepared for substitute teacher.'
+      }
+    ];
+
+    for (const request of leaveRequests) {
+      leaveRequestStmt.run(
+        request.user_id,        request.leave_type,
+        request.start_date,
+        request.end_date,
+        request.reason,
+        request.status,
+        request.created_at,
+        request.approved_by,
+        request.approval_date,
+        request.approval_comments
+      );}
+
+    // Re-enable foreign key checks
+    db.exec('PRAGMA foreign_keys = ON');
 
     console.log('Database seeding completed successfully!');
     console.log('\nDefault login credentials:');

@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/database';
 import { verifyToken } from '@/lib/auth';
+import { AuthenticationError, AuthorizationError, NotFoundError, createErrorResponse } from '@/lib/errors';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('token')?.value;
+    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('token')?.value;
     
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('No authentication token provided');
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      throw new AuthenticationError('Invalid or expired token');
     }
 
     const db = getDatabase();
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       // Teacher sees students from their classes
       const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
       if (!teacher) {
-        return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
+        throw new NotFoundError('Teacher profile not found');
       }
 
       let query = `
@@ -77,11 +78,12 @@ export async function GET(request: NextRequest) {
         JOIN users u ON s.user_id = u.id
         WHERE s.user_id = ?
       `).all(decoded.userId);
+    } else {
+      throw new AuthorizationError('Insufficient permissions to access student data');
     }
 
     return NextResponse.json({ students });
   } catch (error) {
-    console.error('Students API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

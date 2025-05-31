@@ -3,6 +3,8 @@
 import { useAuth } from '@/context/AuthContext';
 import { AuthUser } from '@/lib/types';
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   User,
   Home,
@@ -26,38 +28,39 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   if (!user) return null;
-
   const getNavigationItems = (userRole: string) => {
     const commonItems = [
       { name: 'Dashboard', href: '/dashboard', icon: Home },
-      { name: 'Profile', href: '/dashboard/profile', icon: User },
-      { name: 'Announcements', href: '/dashboard/announcements', icon: MessageSquare },
+      { name: 'Profile', href: '/profile', icon: User },
+      { name: 'Announcements', href: '/announcements', icon: MessageSquare },
     ];
 
     const studentItems = [
-      { name: 'Results', href: '/dashboard/results', icon: BarChart3 },
-      { name: 'Timetable', href: '/dashboard/timetable', icon: Calendar },
-      { name: 'Attendance', href: '/dashboard/attendance', icon: ClipboardList },
-      { name: 'Leave Requests', href: '/dashboard/leave-requests', icon: FileText },
+      { name: 'Results', href: '/results', icon: BarChart3 },
+      { name: 'Timetable', href: '/timetable', icon: Calendar },
+      { name: 'Attendance', href: '/attendance', icon: ClipboardList },
+      { name: 'Leave Requests', href: '/leave-requests', icon: FileText },
     ];
 
     const teacherItems = [
-      { name: 'Timetable', href: '/dashboard/timetable', icon: Calendar },
-      { name: 'Manage Attendance', href: '/dashboard/manage-attendance', icon: ClipboardList },
-      { name: 'Manage Results', href: '/dashboard/manage-results', icon: BarChart3 },
-      { name: 'Leave Requests', href: '/dashboard/leave-requests', icon: FileText },
+      { name: 'Timetable', href: '/timetable', icon: Calendar },
+      { name: 'Manage Attendance', href: '/attendance', icon: ClipboardList },
+      { name: 'Manage Results', href: '/manage-results', icon: BarChart3 },
+      { name: 'Leave Requests', href: '/leave-requests', icon: FileText },
     ];
 
     const principalItems = [
-      { name: 'Users', href: '/dashboard/users', icon: Users },
-      { name: 'Classes', href: '/dashboard/classes', icon: BookOpen },
-      { name: 'Timetable', href: '/dashboard/timetable', icon: Calendar },
-      { name: 'Attendance Reports', href: '/dashboard/attendance-reports', icon: ClipboardList },
-      { name: 'Results Overview', href: '/dashboard/results-overview', icon: BarChart3 },
-      { name: 'Leave Approvals', href: '/dashboard/leave-approvals', icon: FileText },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+      { name: 'Users', href: '/users', icon: Users },
+      { name: 'Classes', href: '/classes', icon: BookOpen },
+      { name: 'Timetable', href: '/timetable', icon: Calendar },
+      { name: 'Attendance Reports', href: '/attendance', icon: ClipboardList },
+      { name: 'Results Overview', href: '/results', icon: BarChart3 },
+      { name: 'Manage Results', href: '/manage-results', icon: BarChart3 },
+      { name: 'Leave Approvals', href: '/leave-approvals', icon: FileText },
+      { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     ];
 
     switch (userRole) {
@@ -99,9 +102,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -112,11 +114,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex-shrink-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full w-64">{/* Rest of sidebar content stays the same */}
           {/* Logo and close button */}
           <div className="flex items-center justify-between p-4 border-b">
             <h1 className="text-xl font-bold text-gray-900">School Portal</h1>
@@ -145,21 +147,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Navigation */}
+          </div>          {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
+              const isActive = pathname === item.href;
               return (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-700 font-medium'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSidebarOpen(false)} // Close mobile sidebar when navigating
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.name}</span>
-                </a>
+                </Link>
               );
             })}
           </nav>
@@ -175,10 +181,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-64">
+      </div>      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
         <header className="bg-white shadow-sm border-b">
           <div className="flex items-center justify-between px-4 py-3">
@@ -207,7 +211,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
       </div>

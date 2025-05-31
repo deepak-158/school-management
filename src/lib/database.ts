@@ -1,10 +1,23 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const DB_PATH = path.join(process.cwd(), 'database', 'school.db');
+// Get database path from environment or use default
+const DB_PATH = process.env.DATABASE_PATH 
+  ? path.resolve(process.env.DATABASE_PATH) 
+  : path.join(process.cwd(), 'database', 'school.db');
 
-// Initialize database
-export const db = new Database(DB_PATH);
+// Initialize database with better error handling
+let db: Database.Database;
+
+try {
+  db = new Database(DB_PATH);
+  console.log(`Database connected: ${DB_PATH}`);
+} catch (error) {
+  console.error('Failed to initialize database:', error);
+  throw new Error(`Database initialization failed: ${error}`);
+}
+
+export { db };
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
@@ -181,20 +194,19 @@ export function initializeDatabase() {
       FOREIGN KEY (target_class_id) REFERENCES classes(id)
     )
   `);
-
   // Leave requests table
   db.exec(`
     CREATE TABLE IF NOT EXISTS leave_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
-      leave_type TEXT NOT NULL,
+      leave_type TEXT DEFAULT 'general',
       start_date DATE NOT NULL,
       end_date DATE NOT NULL,
       reason TEXT NOT NULL,
       status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
       approved_by INTEGER,
-      approval_date DATETIME,
-      approval_comments TEXT,
+      approved_at DATETIME,
+      approver_notes TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (approved_by) REFERENCES users(id)

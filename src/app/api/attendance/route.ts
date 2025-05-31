@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/database';
 import { verifyToken } from '@/lib/auth';
+import { AuthenticationError, AuthorizationError, NotFoundError, ValidationError, createErrorResponse, validateRequiredFields } from '@/lib/errors';
 
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
     
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('No authentication token provided');
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      throw new AuthenticationError('Invalid or expired token');
     }
 
     const db = getDatabase();
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       // Student sees their own attendance
       const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.userId) as any;
       if (!student) {
-        return NextResponse.json({ error: 'Student not found' }, { status: 404 });
+        throw new NotFoundError('Student profile not found');
       }
 
       let query = `
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       // Teacher sees attendance for their classes
       const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
       if (!teacher) {
-        return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
+        throw new NotFoundError('Teacher profile not found');
       }
 
       let query = `
@@ -105,12 +106,13 @@ export async function GET(request: NextRequest) {
       query += ' ORDER BY c.name, s.full_name';
       
       attendance = db.prepare(query).all(...params);
+    } else {
+      throw new AuthorizationError('Insufficient permissions to access attendance data');
     }
 
     return NextResponse.json({ attendance });
   } catch (error) {
-    console.error('Attendance API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -119,23 +121,25 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get('token')?.value;
     
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError('No authentication token provided');
     }
 
     const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      throw new AuthenticationError('Invalid or expired token');
     }
 
     // Only teachers and principals can mark attendance
     if (!['teacher', 'principal'].includes(decoded.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      throw new AuthorizationError('Only teachers and principals can mark attendance');
+    }    const body = await request.json();
+    validateRequiredFields(body, ['student_id', 'date', 'status']);
 
-    const { student_id, date, status } = await request.json();
+    const { student_id, date, status } = body;
 
-    if (!student_id || !date || !status) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    // Validate status
+    if (!['present', 'absent', 'late'].includes(status)) {
+      throw new ValidationError('Invalid attendance status. Must be: present, absent, or late');
     }
 
     const db = getDatabase();
@@ -161,9 +165,8 @@ export async function POST(request: NextRequest) {
       `).run(student_id, date, status);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Attendance marked successfully' });
   } catch (error) {
-    console.error('Mark attendance error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }

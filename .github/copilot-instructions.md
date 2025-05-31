@@ -7,8 +7,15 @@ This is a comprehensive school management portal built with Next.js 15, TypeScri
 
 ### User Roles
 1. **Students**: View profile, academic results, timetable, attendance, announcements, and submit leave requests
-2. **Teachers**: Manage student attendance, enter results, create announcements, view/manage timetables, and handle leave requests
-3. **Principal/Admin**: Full system access including user management, analytics, system-wide announcements, and approvals
+2. **Teachers**: Manage student attendance, enter results, create announcements, view/manage timetables, handle leave requests, and approve student leave requests from their classes
+3. **Principal/Admin**: Full system access including user management, analytics, system-wide announcements, and approve all leave requests (both teachers and students)
+
+### Leave Approval Workflow
+- **Teacher Leave Requests**: Must be approved by Principal/Admin only
+- **Student Leave Requests**: Can be approved by either:
+  - Their class teacher (if the student belongs to their class)
+  - Principal/Admin (can approve any student leave request)
+- **Approval Hierarchy**: Principal > Class Teacher > Student
 
 ### Technical Stack
 - **Frontend**: Next.js 15 with App Router, TypeScript, Tailwind CSS
@@ -35,5 +42,6 @@ This is a comprehensive school management portal built with Next.js 15, TypeScri
 ### Security Considerations
 - Implement proper authentication middleware
 - Validate user permissions for all protected routes
+- Ensure leave approval permissions follow hierarchy (Principal > Class Teacher > Student)
 - Sanitize user inputs
 - Use environment variables for sensitive configuration
