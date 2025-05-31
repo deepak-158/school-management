@@ -15,38 +15,58 @@ export async function GET(request: NextRequest) {
     
     if (!payload) {
       throw new AuthenticationError('Invalid or expired token');
-    }    const db = getDatabase();
+    }
+
+    const db = getDatabase();
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');    const userRole = payload.role;
-    const userId = payload.id; // Fixed: use 'id' instead of 'userId'
+    const status = searchParams.get('status');
+    const myRequests = searchParams.get('my_requests') === 'true';
+
+    const userRole = payload.role;
+    const userId = payload.id;
     
     let query = `
       SELECT 
         lr.*,
         (u.first_name || ' ' || u.last_name) as user_name,
         u.role as user_role,
-        s.class_id
+        s.class_id,
+        c.name as class_name,
+        (approver.first_name || ' ' || approver.last_name) as approver_name
       FROM leave_requests lr
       JOIN users u ON lr.user_id = u.id
       LEFT JOIN students s ON lr.user_id = s.user_id
+      LEFT JOIN classes c ON s.class_id = c.id
+      LEFT JOIN users approver ON lr.approved_by = approver.id
       WHERE 1=1
     `;
     
     const params: any[] = [];
 
-    // Role-based filtering
-    if (userRole === 'teacher') {
-      // Teachers can only see leave requests from students in their classes
-      query += ` AND u.role = 'student' AND s.class_id IN (
-        SELECT DISTINCT class_id FROM teacher_subjects WHERE teacher_id = ?
-      )`;
-      params.push(userId);
-    } else if (userRole === 'principal') {
-      // Principals can see all leave requests
-    } else {
-      // Students can only see their own requests
+    // Handle "my requests" filter for viewing own requests
+    if (myRequests) {
       query += ` AND lr.user_id = ?`;
       params.push(userId);
+    } else {
+      // Role-based filtering for approval purposes
+      if (userRole === 'teacher') {
+        // Teachers can only see leave requests from students in their classes
+        query += ` AND u.role = 'student' AND s.class_id IN (
+          SELECT DISTINCT c.id FROM classes c 
+          WHERE c.class_teacher_id = ? OR c.id IN (
+            SELECT DISTINCT class_id FROM teacher_subjects ts 
+            JOIN teachers t ON ts.teacher_id = t.id 
+            WHERE t.user_id = ?
+          )
+        )`;
+        params.push(userId, userId);
+      } else if (userRole === 'principal') {
+        // Principals can see all leave requests
+      } else {
+        // Students can only see their own requests
+        query += ` AND lr.user_id = ?`;
+        params.push(userId);
+      }
     }
 
     // Status filtering
@@ -82,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { reason, start_date, end_date } = body;
+    const { leave_type = 'general', reason, start_date, end_date } = body;
 
     if (!reason || !start_date || !end_date) {
       throw new AppError('Reason, start date, and end date are required', 400);
@@ -105,11 +125,11 @@ export async function POST(request: NextRequest) {
     const db = getDatabase();
     
     const stmt = db.prepare(`
-      INSERT INTO leave_requests (user_id, reason, start_date, end_date, status, created_at)
-      VALUES (?, ?, ?, ?, 'pending', datetime('now'))
+      INSERT INTO leave_requests (user_id, leave_type, reason, start_date, end_date, status, created_at)
+      VALUES (?, ?, ?, ?, ?, 'pending', datetime('now'))
     `);
 
-    const result = stmt.run(payload.id, reason, start_date, end_date);
+    const result = stmt.run(payload.id, leave_type, reason, start_date, end_date);
 
     return NextResponse.json({ 
       message: 'Leave request submitted successfully',
@@ -147,11 +167,13 @@ export async function PUT(request: NextRequest) {
     }
 
     const db = getDatabase();
-      // Get the leave request details
+
+    // Get the leave request details
     const leaveRequest = db.prepare(`
       SELECT 
         lr.*,
         u.role as user_role,
+        s.id as student_id,
         s.class_id
       FROM leave_requests lr
       JOIN users u ON lr.user_id = u.id
@@ -165,7 +187,9 @@ export async function PUT(request: NextRequest) {
 
     if (leaveRequest.status !== 'pending') {
       throw new AppError('Leave request has already been processed', 400);
-    }    // Authorization check
+    }
+
+    // Authorization check
     const userRole = payload.role;
     const userId = payload.id;
 
@@ -177,28 +201,68 @@ export async function PUT(request: NextRequest) {
         throw new AuthorizationError('Teachers cannot approve other teachers\' leave requests');
       }
 
-      // Check if teacher teaches this student's class
-      const teacherClass = db.prepare(`
-        SELECT 1 FROM teacher_subjects 
-        WHERE teacher_id = ? AND class_id = ?
+      // Check if teacher teaches this student's class or is the class teacher
+      const teacherAccess = db.prepare(`
+        SELECT 1 FROM (
+          SELECT class_id FROM classes WHERE class_teacher_id = ?
+          UNION
+          SELECT DISTINCT class_id FROM teacher_subjects ts 
+          JOIN teachers t ON ts.teacher_id = t.id 
+          WHERE t.user_id = ?
+        ) WHERE class_id = ?
         LIMIT 1
-      `).get(userId, leaveRequest.class_id);
+      `).get(userId, userId, leaveRequest.class_id);
 
-      if (!teacherClass) {
+      if (!teacherAccess) {
         throw new AuthorizationError('You can only approve leave requests from students in your classes');
       }
     } else {
       throw new AuthorizationError('Only teachers and principals can approve leave requests');
     }
 
-    // Update the leave request
-    const updateStmt = db.prepare(`
-      UPDATE leave_requests 
-      SET status = ?, approved_by = ?, approver_notes = ?, approved_at = datetime('now')
-      WHERE id = ?
-    `);
+    // Begin transaction for atomic operation
+    const updateLeave = db.transaction(() => {
+      // Update the leave request
+      const updateStmt = db.prepare(`
+        UPDATE leave_requests 
+        SET status = ?, approved_by = ?, approver_notes = ?, approved_at = datetime('now')
+        WHERE id = ?
+      `);
+      updateStmt.run(status, userId, approver_notes || null, id);
 
-    updateStmt.run(status, userId, approver_notes || null, id);
+      // If approved and it's a student leave request, create attendance records
+      if (status === 'approved' && leaveRequest.user_role === 'student' && leaveRequest.student_id) {
+        const startDate = new Date(leaveRequest.start_date);
+        const endDate = new Date(leaveRequest.end_date);
+        
+        // Create attendance records for each day of the leave
+        const currentDate = new Date(startDate);
+        const attendanceStmt = db.prepare(`
+          INSERT OR REPLACE INTO attendance (student_id, class_id, date, status, marked_by, notes, created_at)
+          VALUES (?, ?, ?, 'absent', ?, ?, datetime('now'))
+        `);
+
+        while (currentDate <= endDate) {
+          // Skip weekends (optional - adjust based on school policy)
+          const dayOfWeek = currentDate.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Skip Sunday (0) and Saturday (6)
+            const dateString = currentDate.toISOString().split('T')[0];
+            const notes = `On approved leave: ${leaveRequest.leave_type} - ${leaveRequest.reason}`;
+            
+            attendanceStmt.run(
+              leaveRequest.student_id,
+              leaveRequest.class_id,
+              dateString,
+              userId,
+              notes
+            );
+          }
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+    });
+
+    updateLeave();
 
     return NextResponse.json({ 
       message: `Leave request ${status} successfully` 

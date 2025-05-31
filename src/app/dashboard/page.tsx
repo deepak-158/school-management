@@ -310,11 +310,10 @@ export default function DashboardPage() {
               <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {user?.role === 'student' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">                {user?.role === 'student' && (
                   <>
                     <a
-                      href="/dashboard/timetable"
+                      href="/timetable"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <Calendar className="h-8 w-8 text-blue-600 mr-3" />
@@ -324,7 +323,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/results"
+                      href="/results"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
@@ -334,7 +333,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/leave-requests"
+                      href="/leave-application"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <Clock className="h-8 w-8 text-orange-600 mr-3" />
@@ -344,12 +343,10 @@ export default function DashboardPage() {
                       </div>
                     </a>
                   </>
-                )}
-
-                {user?.role === 'teacher' && (
+                )}                {user?.role === 'teacher' && (
                   <>
                     <a
-                      href="/dashboard/manage-attendance"
+                      href="/attendance"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <ClipboardList className="h-8 w-8 text-blue-600 mr-3" />
@@ -359,7 +356,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/manage-results"
+                      href="/manage-results"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
@@ -369,7 +366,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/announcements"
+                      href="/announcements"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <MessageSquare className="h-8 w-8 text-purple-600 mr-3" />
@@ -379,12 +376,10 @@ export default function DashboardPage() {
                       </div>
                     </a>
                   </>
-                )}
-
-                {user?.role === 'principal' && (
+                )}                {user?.role === 'principal' && (
                   <>
                     <a
-                      href="/dashboard/users"
+                      href="/users"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <Users className="h-8 w-8 text-blue-600 mr-3" />
@@ -394,7 +389,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/analytics"
+                      href="/analytics"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
@@ -404,7 +399,7 @@ export default function DashboardPage() {
                       </div>
                     </a>
                     <a
-                      href="/dashboard/leave-approvals"
+                      href="/leave-approvals"
                       className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
                     >
                       <Clock className="h-8 w-8 text-orange-600 mr-3" />

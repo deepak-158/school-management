@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useEffect, useState } from 'react';
 import { Users, UserPlus, Edit, Trash2, Search } from 'lucide-react';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface User {
   id: number;

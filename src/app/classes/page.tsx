@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useEffect, useState } from 'react';
 import { BookOpen, Users, Plus, Edit, Eye } from 'lucide-react';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface Class {
   id: number;

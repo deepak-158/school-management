@@ -18,7 +18,11 @@ import {
   X,
   Users,
   BarChart3,
-  FileText
+  FileText,
+  FilePlus,
+  FileCheck,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -28,6 +32,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Leave']));
   const pathname = usePathname();
 
   if (!user) return null;
@@ -36,30 +41,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       { name: 'Dashboard', href: '/dashboard', icon: Home },
       { name: 'Profile', href: '/profile', icon: User },
       { name: 'Announcements', href: '/announcements', icon: MessageSquare },
-    ];
-
-    const studentItems = [
+    ];    const studentItems = [
       { name: 'Results', href: '/results', icon: BarChart3 },
       { name: 'Timetable', href: '/timetable', icon: Calendar },
       { name: 'Attendance', href: '/attendance', icon: ClipboardList },
-      { name: 'Leave Requests', href: '/leave-requests', icon: FileText },
-    ];
-
-    const teacherItems = [
+      { 
+        name: 'Leave', 
+        icon: FileText, 
+        isExpandable: true,
+        children: [
+          { name: 'Apply for Leave', href: '/leave-application', icon: FilePlus },
+          { name: 'My Leave', href: '/my-leave', icon: FileText },
+        ]
+      },
+    ];    const teacherItems = [
       { name: 'Timetable', href: '/timetable', icon: Calendar },
       { name: 'Manage Attendance', href: '/attendance', icon: ClipboardList },
       { name: 'Manage Results', href: '/manage-results', icon: BarChart3 },
-      { name: 'Leave Requests', href: '/leave-requests', icon: FileText },
-    ];
-
-    const principalItems = [
+      { 
+        name: 'Leave', 
+        icon: FileText, 
+        isExpandable: true,
+        children: [
+          { name: 'Apply for Leave', href: '/leave-application', icon: FilePlus },
+          { name: 'My Leave', href: '/my-leave', icon: FileText },
+          { name: 'Approve Leave', href: '/leave-approvals', icon: FileCheck },
+        ]
+      },
+    ];    const principalItems = [
       { name: 'Users', href: '/users', icon: Users },
       { name: 'Classes', href: '/classes', icon: BookOpen },
       { name: 'Timetable', href: '/timetable', icon: Calendar },
       { name: 'Attendance Reports', href: '/attendance', icon: ClipboardList },
       { name: 'Results Overview', href: '/results', icon: BarChart3 },
-      { name: 'Manage Results', href: '/manage-results', icon: BarChart3 },
-      { name: 'Leave Approvals', href: '/leave-approvals', icon: FileText },
+      { name: 'Leave Approvals', href: '/leave-approvals', icon: FileCheck },
       { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     ];
 
@@ -76,6 +91,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const navigationItems = getNavigationItems(user.role);
+
+  const toggleSection = (sectionName: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionName)) {
+      newExpanded.delete(sectionName);
+    } else {
+      newExpanded.add(sectionName);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const isLeaveRelatedPath = (path: string) => {
+    return path.includes('/leave-') || path.includes('/my-leave');
+  };
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
@@ -149,8 +178,58 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>          {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
-            {navigationItems.map((item) => {
+            {navigationItems.map((item: any) => {
               const Icon = item.icon;
+              
+              if (item.isExpandable) {
+                const isExpanded = expandedSections.has(item.name);
+                const ChevronIcon = isExpanded ? ChevronDown : ChevronRight;
+                const hasActiveChild = item.children?.some((child: any) => pathname === child.href);
+                
+                return (
+                  <div key={item.name}>
+                    <button
+                      onClick={() => toggleSection(item.name)}
+                      className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors duration-200 ${
+                        hasActiveChild || isLeaveRelatedPath(pathname)
+                          ? 'bg-blue-100 text-blue-700 font-medium'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Icon className="h-5 w-5" />
+                        <span>{item.name}</span>
+                      </div>
+                      <ChevronIcon className="h-4 w-4" />
+                    </button>
+                    
+                    {isExpanded && (
+                      <div className="ml-6 mt-2 space-y-1">
+                        {item.children?.map((child: any) => {
+                          const ChildIcon = child.icon;
+                          const isChildActive = pathname === child.href;
+                          return (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                                isChildActive
+                                  ? 'bg-blue-50 text-blue-600 font-medium'
+                                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              <ChildIcon className="h-4 w-4" />
+                              <span className="text-sm">{child.name}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -161,7 +240,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       ? 'bg-blue-100 text-blue-700 font-medium'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
-                  onClick={() => setSidebarOpen(false)} // Close mobile sidebar when navigating
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.name}</span>

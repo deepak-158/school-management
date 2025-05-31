@@ -82,32 +82,33 @@ database/
   - `subjects` - Subject catalog
   - `teacher_subjects` - Teacher-subject-class assignments
   - `timetable` - Schedule entries
-  - `attendance` - Daily attendance records
+  - `attendance` - Daily attendance records with leave integration ✅ **ENHANCED**
   - `results` - Academic results/grades
   - `announcements` - System announcements
-  - `leave_requests` - Leave applications
+  - `leave_requests` - Leave applications with approval workflow ✅ **ENHANCED**
 - [x] Database seeding script with sample data
 
 ### 🎯 Role-Based Dashboards
 - [x] Student Dashboard
   - View academic results and statistics
   - Check attendance records
-  - Access timetable
-  - Read announcements
+  - Access timetable and announcements
+  - **Apply for leave and track leave requests** ✅ **NEW**
 - [x] Teacher Dashboard  
   - View assigned classes and students
-  - Access teaching statistics
-  - Manage announcements
+  - Access teaching statistics and manage announcements
+  - **Apply for leave, track personal leave, and approve student leave requests** ✅ **NEW**
 - [x] Principal Dashboard
   - System overview and analytics
   - User management interface
-  - School-wide statistics
+  - **Approve all leave requests (teachers and students)** ✅ **NEW**
+  - School-wide statistics and timetable management
 
-### 📊 API Endpoints (12 Routes)
+### 📊 API Endpoints (13 Routes) ✅ **ENHANCED**
 - [x] `/api/auth/login` - User authentication
 - [x] `/api/dashboard/stats` - Dashboard statistics
 - [x] `/api/dashboard/announcements` - Announcement management
-- [x] `/api/attendance` - Attendance tracking
+- [x] `/api/attendance` - Attendance tracking with leave integration ✅ **ENHANCED**
 - [x] `/api/attendance/bulk` - Bulk attendance operations
 - [x] `/api/results` - Academic results management
 - [x] `/api/students` - Student data operations
@@ -116,23 +117,26 @@ database/
 - [x] `/api/profile` - User profile data
 - [x] `/api/teacher/classes` - Teacher's classes
 - [x] `/api/teacher/subjects` - Teacher's subjects
+- [x] `/api/leave-requests` - **Complete leave management with approval workflow** ✅ **NEW**
 
 ### 🎨 User Interface
 - [x] Responsive design with Tailwind CSS
-- [x] Modern dashboard layouts
-- [x] Role-specific navigation ✅ ENHANCED
-- [x] Complete sidebar navigation system ✅ FIXED
-- [x] Loading states and error handling ✅ ENHANCED
+- [x] Modern dashboard layouts with role-specific navigation ✅ **ENHANCED**
+- [x] **Collapsible leave management sections in sidebar** ✅ **NEW**
+- [x] **Fixed quick action buttons in dashboard** ✅ **FIXED**
+- [x] **Streamlined principal navigation (removed personal leave options)** ✅ **OPTIMIZED**
+- [x] Complete sidebar navigation system with expandable sections ✅ **ENHANCED**
+- [x] Loading states and error handling ✅ **ENHANCED**
 - [x] Accessible form components
-- [x] ErrorBoundary for React error catching ✅ NEW
-- [x] LoadingSpinner components with skeleton states ✅ NEW
+- [x] ErrorBoundary for React error catching ✅ **NEW**
+- [x] LoadingSpinner components with skeleton states ✅ **NEW**
 
 ### 🔧 Development Infrastructure
-- [x] Comprehensive environment configuration (.env.local) ✅ NEW
-- [x] Custom error handling system with typed errors ✅ NEW
-- [x] Centralized error responses for APIs ✅ NEW
-- [x] Database configuration with environment variables ✅ NEW
-- [x] Development server running successfully ✅ VERIFIED
+- [x] Comprehensive environment configuration (.env.local) ✅ **NEW**
+- [x] Custom error handling system with typed errors ✅ **NEW**
+- [x] Centralized error responses for APIs ✅ **NEW**
+- [x] Database configuration with environment variables ✅ **NEW**
+- [x] Development server running successfully ✅ **VERIFIED**
 
 ## ✅ Recently Fixed Critical Issues
 
@@ -149,12 +153,44 @@ database/
 - [x] **RESULT**: Leave management system now fully functional without authentication or SQL errors
 - [x] **STATUS**: All critical blocking issues resolved, application ready for end-to-end testing
 
+### 🎯 **MAJOR ENHANCEMENT: Complete Leave Management System** ⭐ **NEWLY COMPLETED**
+- [x] **NEW**: Created comprehensive leave application system (`/leave-application`)
+  - Leave type selection (general, sick, emergency, personal, medical, family)
+  - Date validation with automatic duration calculation
+  - Success/error handling with user guidance
+- [x] **NEW**: Created personal leave tracking system (`/my-leave`)
+  - View all personal leave requests with status filtering
+  - Detailed leave cards with status icons and approval information
+  - Modal for viewing complete leave details
+  - Statistics dashboard showing leave summaries
+- [x] **ENHANCED**: Integrated attendance system with leave approvals
+  - Automatic attendance record creation when leave is approved
+  - Transaction-based atomic operations (leave approval + attendance creation)
+  - Weekday filtering (skips weekends) for attendance records
+  - Proper status tracking with "absent" + leave notes
+- [x] **ENHANCED**: Consolidated navigation with collapsible leave sections
+  - All leave options grouped under expandable "Leave" section
+  - Role-specific leave access:
+    - **Students**: Apply for Leave, My Leave
+    - **Teachers**: Apply for Leave, My Leave, Approve Leave
+    - **Principal**: Leave Approvals only (streamlined interface)
+- [x] **FIXED**: Quick action buttons in dashboard
+  - Removed incorrect `/dashboard/` prefixes from all URLs
+  - All student, teacher, and principal quick links now working correctly
+- [x] **OPTIMIZED**: Principal navigation interface
+  - Removed unnecessary personal leave options ("Apply for Leave", "My Leave")
+  - Removed redundant "Manage Results" option
+  - Streamlined to focus on administrative functions
+- [x] **RESULT**: Complete end-to-end leave management workflow operational
+
 ### 🛠️ Sidebar Layout & Navigation (RESOLVED)
 - [x] **FIXED**: Sidebar and main content positioning using flexbox layout
 - [x] **FIXED**: Navigation links routing from `/dashboard/...` to correct root paths
 - [x] **FIXED**: Active route highlighting with usePathname hook
 - [x] **FIXED**: Mobile sidebar auto-close functionality
-- [x] **RESULT**: Complete navigation system working perfectly
+- [x] **ENHANCED**: Added expandable/collapsible navigation sections with state management
+- [x] **ENHANCED**: Implemented nested navigation structure for leave management
+- [x] **RESULT**: Complete navigation system working perfectly with improved UX
 
 ### 📝 New Page Creation (IMPLEMENTED)
 - [x] **NEW**: Created `/users` page for principal user management
@@ -206,13 +242,26 @@ database/
 - [x] Basic announcement API ✅ WORKING
 
 ### 🏃‍♂️ Leave Management System ✅ **COMPLETED**
-- [x] Leave request submission UI ✅ COMPLETE
-- [x] Leave approval workflow for principals ✅ COMPLETE  
-- [x] **Class teacher approval for student leaves** ✅ **COMPLETED**
-- [x] Role-based leave management access ✅ COMPLETE
-- [x] Complete API endpoints with proper authorization ✅ COMPLETE
-- [x] Database schema and sample data ✅ COMPLETE
-- [x] Role-based approval hierarchy (Principal > Class Teacher > Student) ✅ COMPLETE
+- [x] **Leave application system with comprehensive form** ✅ **COMPLETE**
+  - Multiple leave types (general, sick, emergency, personal, medical, family)
+  - Date validation and automatic duration calculation
+  - Success/error handling with user feedback
+- [x] **Personal leave tracking and management** ✅ **COMPLETE**
+  - View all personal leave requests with status filtering
+  - Detailed leave information with approver details
+  - Statistics dashboard with leave summaries
+- [x] **Leave approval workflow for principals and teachers** ✅ **COMPLETE**  
+- [x] **Class teacher approval for student leaves** ✅ **COMPLETE**
+- [x] **Attendance integration with approved leaves** ✅ **COMPLETE**
+  - Automatic attendance record creation for approved leaves
+  - Transaction-based atomic operations
+  - Weekday filtering and proper status tracking
+- [x] **Role-based leave management access** ✅ **COMPLETE**
+- [x] **Complete API endpoints with proper authorization** ✅ **COMPLETE**
+- [x] **Database schema and sample data** ✅ **COMPLETE**
+- [x] **Role-based approval hierarchy (Principal > Class Teacher > Student)** ✅ **COMPLETE**
+- [x] **Collapsible navigation with role-specific leave sections** ✅ **COMPLETE**
+- [x] **Streamlined principal interface (admin-focused)** ✅ **COMPLETE**
 
 ### 👥 User Management
 - [x] User management interface ✅ COMPLETE
@@ -481,6 +530,14 @@ database/
 - UI Components: `src/components/ErrorBoundary.tsx`, `src/components/LoadingSpinner.tsx`
 
 ### Recent Changes Log
+- **2025-05-31**: ✅ **MAJOR ENHANCEMENT**: Complete Leave Management System
+  - Created `/leave-application` page with comprehensive form and leave type selection
+  - Created `/my-leave` page with personal leave tracking, filtering, and detailed views
+  - Integrated attendance system with automatic record creation for approved leaves
+  - Added collapsible leave navigation sections with role-based access
+  - Fixed all dashboard quick action buttons by removing incorrect URL prefixes
+  - Streamlined principal navigation by removing personal leave options and redundant features
+  - Enhanced API with attendance integration, my_requests parameter, and leave_type support
 - **2025-05-31**: ✅ **CRITICAL FIX**: Resolved SQL syntax error in leave requests API
   - Fixed malformed template literal in leave requests route
   - Corrected SQL query formatting with proper concatenation for user names
@@ -508,40 +565,50 @@ database/
 ---
 
 **Last Updated**: May 31, 2025  
-**Project Status**: ~98% Core Features Complete ✅ **AUTHENTICATION & SQL FULLY FIXED**  
+**Project Status**: ~99% Core Features Complete ✅ **LEAVE MANAGEMENT SYSTEM FULLY IMPLEMENTED**  
 **Core System Status**: **PRODUCTION READY** 🎉  
 **Next Phase**: Optional enhancements and advanced features
 
 ## 🎊 Project Completion Summary
 
-### ✅ **MAJOR MILESTONE ACHIEVED**: Core School Management System Complete!
+### ✅ **MAJOR MILESTONE ACHIEVED**: Complete School Management System with Advanced Leave Management!
 
-The school management portal now includes all essential features for a fully functional educational administration system:
+The school management portal now includes all essential features for a fully functional educational administration system with a comprehensive leave management workflow:
 
 #### **Production-Ready Features:**
 1. ✅ **Complete Authentication & Authorization**
 2. ✅ **Role-Based Dashboards** (Student, Teacher, Principal)
 3. ✅ **Results Management System**
-4. ✅ **Attendance Tracking & Management**
+4. ✅ **Attendance Tracking & Management with Leave Integration** 🎉 **ENHANCED**
 5. ✅ **Timetable Management**
 6. ✅ **Announcements System**
-7. ✅ **Leave Management with Approval Workflow** 🎉 **NEWLY COMPLETED**
+7. ✅ **Advanced Leave Management with Attendance Integration** 🎉 **FULLY COMPLETED**
 8. ✅ **User Management Interface**
 9. ✅ **Analytics Dashboard**
 10. ✅ **Class Management System**
+11. ✅ **Streamlined Role-Based Navigation** 🎉 **OPTIMIZED**
 
 #### **Technical Excellence:**
-- ✅ Comprehensive error handling
-- ✅ Database seeding with sample data
-- ✅ Role-based security throughout
-- ✅ Responsive UI design
-- ✅ Production-ready codebase
+- ✅ Comprehensive error handling with transaction-based operations
+- ✅ Database seeding with sample data and foreign key relationships
+- ✅ Role-based security throughout with hierarchical approval workflow
+- ✅ Responsive UI design with collapsible navigation sections
+- ✅ Production-ready codebase with optimized user interfaces
 
 #### **Leave Management Achievement:**
+- ✅ **Complete leave application system** with multiple leave types and validation
+- ✅ **Personal leave tracking** with filtering, detailed views, and statistics
 - ✅ **Student leave requests** can be approved by class teachers or principals
 - ✅ **Teacher leave requests** require principal approval
-- ✅ **Complete API authorization** with proper role hierarchy
-- ✅ **Database integration** with foreign key relationships
-- ✅ **UI components** for submission and approval workflows
+- ✅ **Attendance integration** with automatic record creation for approved leaves
+- ✅ **Complete API authorization** with proper role hierarchy and transaction safety
+- ✅ **Database integration** with foreign key relationships and proper constraints
+- ✅ **Optimized UI components** with role-specific navigation and streamlined interfaces
 
-**🚀 The system is now ready for deployment and use in educational institutions!**
+#### **Navigation & UX Enhancements:**
+- ✅ **Collapsible leave sections** in sidebar navigation with expand/collapse functionality
+- ✅ **Fixed quick action buttons** in dashboards with correct URL routing
+- ✅ **Streamlined principal interface** focused on administrative functions
+- ✅ **Role-specific leave access** with appropriate permissions and workflows
+
+**🚀 The system is now ready for deployment and use in educational institutions with advanced leave management capabilities!**
