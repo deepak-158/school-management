@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #output { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; white-space: pre-wrap; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Complete Login and Manage Results Test</h1>
+    <button onclick="runTest()">Run Complete Test</button>
+    <button onclick="clearOutput()">Clear Output</button>
+    <button onclick="checkStorage()">Check Storage</button>
+    <a href="/manage-results" target="_blank"><button>Open Manage Results</button></a>
+    
+    <div id="output"></div>
+    
+    <script>
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        function checkStorage() {
+            const output = document.getElementById('output');
+            output.innerHTML += '\\n=== CURRENT STORAGE ===\\n';
+            output.innerHTML += 'Token: ' + (localStorage.getItem('auth_token') ? 'exists' : 'missing') + '\\n';
+            const userData = localStorage.getItem('user_data');
+            if (userData) {
+                output.innerHTML += 'User data: ' + JSON.stringify(JSON.parse(userData), null, 2) + '\\n';
+            } else {
+                output.innerHTML += 'User data: missing\\n';
+            }
+        }
+        
+        // Redirect console to output
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const output = document.getElementById('output');
+            output.innerHTML += args.join(' ') + '\\n';
+            output.scrollTop = output.scrollHeight;
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            const output = document.getElementById('output');
+            output.innerHTML += '<span class="error">' + args.join(' ') + '</span>\\n';
+            output.scrollTop = output.scrollHeight;
+        };
+        
+        async function runTest() {
+            clearOutput();
+            
+            console.log('=== COMPLETE LOGIN AND MANAGE-RESULTS TEST ===');
+            
+            // Clear existing storage
+            localStorage.clear();
+            console.log('1. Cleared localStorage');
+            
+            // Test with correct teacher username
+            console.log('\\n2. Testing login with ateacher001...');
+            
+            try {
+                const loginResponse = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'ateacher001',
+                        password: 'password123'
+                    })
+                });
+                
+                console.log('Login status:', loginResponse.status);
+                
+                if (loginResponse.ok) {
+                    const loginData = await loginResponse.json();
+                    console.log('Login response success:', loginData.success);
+                    console.log('User role:', loginData.data?.role);
+                    console.log('User ID:', loginData.data?.id);
+                    console.log('User name:', loginData.data?.first_name, loginData.data?.last_name);
+                    
+                    if (loginData.success && loginData.data) {
+                        // Store auth data exactly like AuthContext does
+                        localStorage.setItem('auth_token', loginData.data.token);
+                        const { token, ...userWithoutToken } = loginData.data;
+                        localStorage.setItem('user_data', JSON.stringify(userWithoutToken));
+                        
+                        console.log('\\n3. Stored auth data:');
+                        console.log('   Token stored:', !!localStorage.getItem('auth_token'));
+                        console.log('   User data stored:', JSON.stringify(userWithoutToken, null, 2));
+                        
+                        // Now test the individual APIs that manage-results calls
+                        console.log('\\n4. Testing APIs individually...');
+                        
+                        const authToken = loginData.data.token;
+                        
+                        // Test teacher classes
+                        console.log('Testing /api/teacher/classes...');
+                        const classesRes = await fetch('/api/teacher/classes', {
+                            headers: { 'Authorization': `Bearer ${authToken}` }
+                        });
+                        console.log('Teacher classes API status:', classesRes.status);
+                        if (classesRes.ok) {
+                            const classesData = await classesRes.json();
+                            console.log('Classes response:', JSON.stringify(classesData, null, 2));
+                        } else {
+                            console.error('Classes API error:', await classesRes.text());
+                        }
+                        
+                        // Test teacher subjects
+                        console.log('\\nTesting /api/teacher/subjects...');
+                        const subjectsRes = await fetch('/api/teacher/subjects', {
+                            headers: { 'Authorization': `Bearer ${authToken}` }
+                        });
+                        console.log('Teacher subjects API status:', subjectsRes.status);
+                        if (subjectsRes.ok) {
+                            const subjectsData = await subjectsRes.json();
+                            console.log('Subjects response:', JSON.stringify(subjectsData, null, 2));
+                            
+                            // Test students if we have classes
+                            if (classesRes.ok) {
+                                const classesData = await classesRes.json();
+                                if (classesData.classes?.length > 0) {
+                                    const firstClass = classesData.classes[0];
+                                    console.log('\\nTesting /api/students with class', firstClass.id);
+                                    
+                                    const studentsRes = await fetch(`/api/students?class_id=${firstClass.id}`, {
+                                        headers: { 'Authorization': `Bearer ${authToken}` }
+                                    });
+                                    console.log('Students API status:', studentsRes.status);
+                                    if (studentsRes.ok) {
+                                        const studentsData = await studentsRes.json();
+                                        console.log('Students response:', JSON.stringify(studentsData, null, 2));
+                                    } else {
+                                        console.error('Students API error:', await studentsRes.text());
+                                    }
+                                }
+                            }
+                        } else {
+                            console.error('Subjects API error:', await subjectsRes.text());
+                        }
+                        
+                        console.log('\\n✅ Auth setup complete. Ready to test manage-results page.');
+                        console.log('<span class="success">✅ You can now navigate to /manage-results and click Debug button</span>');
+                        
+                        return true;
+                    }
+                } else {
+                    const errorText = await loginResponse.text();
+                    console.error('Login failed:', errorText);
+                }
+            } catch (error) {
+                console.error('Error during test:', error);
+            }
+            
+            return false;
+        }
+    </script>
+</body>
+</html>

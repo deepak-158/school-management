@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 interface Announcement {
   id: number;
   title: string;
   content: string;
   author_name: string;
-  target_role: string;
-  target_class_id?: number;
+  target_role: string | null;
+  target_class_id?: number | null;
   created_at: string;
 }
 
@@ -26,17 +27,22 @@ export default function AnnouncementsPage() {
     target_role: 'all',
     target_class_id: '',
   });
-
   useEffect(() => {
-    fetchAnnouncements();
-    if (user?.role === 'principal' || user?.role === 'teacher') {
-      fetchClasses();
+    if (user) {
+      fetchAnnouncements();
+      if (user?.role === 'principal' || user?.role === 'teacher') {
+        fetchClasses();
+      }
     }
-  }, []);
-
+  }, [user]);
   const fetchAnnouncements = async () => {
     try {
-      const response = await fetch('/api/dashboard/announcements');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/dashboard/announcements', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setAnnouncements(data.announcements);
@@ -47,10 +53,14 @@ export default function AnnouncementsPage() {
       setLoading(false);
     }
   };
-
   const fetchClasses = async () => {
     try {
-      const response = await fetch('/api/classes');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/classes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setClasses(data.classes);
@@ -59,15 +69,16 @@ export default function AnnouncementsPage() {
       console.error('Error fetching classes:', error);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/dashboard/announcements', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           title: formData.title,
@@ -94,13 +105,12 @@ export default function AnnouncementsPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const getTargetText = (targetRole: string, targetClassId?: number) => {
+  };  const getTargetText = (targetRole: string | null, targetClassId?: number | null) => {
+    if (!targetRole) return 'Unknown';
     if (targetRole === 'all') return 'Everyone';
     if (targetRole === 'class' && targetClassId) {
       const className = classes.find(c => c.id === targetClassId)?.name;
-      return `Class: ${className}`;
+      return `Class: ${className || 'Unknown Class'}`;
     }
     return targetRole.charAt(0).toUpperCase() + targetRole.slice(1) + 's';
   };
@@ -112,14 +122,14 @@ export default function AnnouncementsPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
-    );
-  }
+    );  }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
           
           {(user?.role === 'principal' || user?.role === 'teacher') && (
             <button
@@ -256,9 +266,9 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
             ))
-          )}
-        </div>
+          )}        </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

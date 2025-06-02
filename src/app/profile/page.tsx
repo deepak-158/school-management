@@ -15,10 +15,14 @@ export default function ProfilePage() {
   useEffect(() => {
     fetchProfile();
   }, []);
-
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/profile');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setProfile(data.profile);
@@ -30,13 +34,14 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
-
   const handleSave = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData),
       });

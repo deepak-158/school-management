@@ -52,11 +52,9 @@ export async function GET(request: NextRequest) {
           attendanceRate,
           presentToday: todayAttendance.present
         };
-        break;
-
-      case 'teacher':
+        break;      case 'teacher':
         // Teacher sees their class stats
-        const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
+        const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
         if (!teacher) {
           return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
         }
@@ -102,7 +100,7 @@ export async function GET(request: NextRequest) {
         };
         break;      case 'student':
         // Student sees their personal stats
-        const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.userId) as any;
+        const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.id) as any;
         if (!student) {
           return NextResponse.json({ error: 'Student not found' }, { status: 404 });
         }

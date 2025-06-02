@@ -35,14 +35,18 @@ export default function AttendancePage() {
       fetchStudents();
     }
   }, [selectedClass]);
-
   const fetchAttendance = async () => {
     try {
       const params = new URLSearchParams();
       if (selectedDate) params.append('date', selectedDate);
       if (selectedClass) params.append('class_id', selectedClass);
 
-      const response = await fetch(`/api/attendance?${params}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/attendance?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setAttendance(data.attendance);
@@ -53,10 +57,14 @@ export default function AttendancePage() {
       setLoading(false);
     }
   };
-
   const fetchClasses = async () => {
     try {
-      const response = await fetch('/api/classes');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/classes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setClasses(data.classes);
@@ -65,10 +73,14 @@ export default function AttendancePage() {
       console.error('Error fetching classes:', error);
     }
   };
-
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`/api/students?class_id=${selectedClass}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/students?class_id=${selectedClass}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setStudents(data.students);
@@ -77,13 +89,14 @@ export default function AttendancePage() {
       console.error('Error fetching students:', error);
     }
   };
-
   const markAttendance = async (studentId: number, status: string) => {
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/attendance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           student_id: studentId,
@@ -110,12 +123,11 @@ export default function AttendancePage() {
           date: selectedDate,
           status: existing?.status || 'present',
         };
-      });
-
-      const response = await fetch('/api/attendance/bulk', {
+      });      const response = await fetch('/api/attendance/bulk', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({ attendance: attendanceData }),
       });

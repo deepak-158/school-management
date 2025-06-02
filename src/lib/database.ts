@@ -154,7 +154,6 @@ export function initializeDatabase() {
       UNIQUE(student_id, date, subject_id)
     )
   `);
-
   // Results/Grades table
   db.exec(`
     CREATE TABLE IF NOT EXISTS results (
@@ -169,7 +168,6 @@ export function initializeDatabase() {
       remarks TEXT,
       teacher_id INTEGER NOT NULL,
       academic_year TEXT NOT NULL,
-      semester TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,

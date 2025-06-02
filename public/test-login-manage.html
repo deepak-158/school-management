@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login and Manage Results</title>
+</head>
+<body>
+    <h1>Test Login and Manage Results</h1>
+    <button onclick="runTest()">Run Test</button>
+    <div id="output"></div>
+    
+    <script>
+        // Redirect console.log to show in browser
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            document.getElementById('output').innerHTML += '<div>' + args.join(' ') + '</div>';
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            document.getElementById('output').innerHTML += '<div style="color: red;">' + args.join(' ') + '</div>';
+        };
+        
+        async function runTest() {
+            document.getElementById('output').innerHTML = '';
+            
+            // Test login and manage-results page flow
+            console.log('=== TESTING LOGIN AND MANAGE RESULTS ===');
+            
+            // First, clear any existing session
+            localStorage.clear();
+            
+            // Test login
+            console.log('1. Testing login...');
+            
+            const loginResponse = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },                body: JSON.stringify({
+                    username: 'ateacher001',
+                    password: 'password123'
+                })
+            });
+            
+            console.log('Login response status:', loginResponse.status);
+            
+            if (loginResponse.ok) {
+                const loginData = await loginResponse.json();
+                console.log('Login response:', JSON.stringify(loginData, null, 2));
+                
+                if (loginData.success && loginData.data) {
+                    // Store auth data as the frontend would
+                    localStorage.setItem('auth_token', loginData.data.token);
+                    const { token, ...userWithoutToken } = loginData.data;
+                    localStorage.setItem('user_data', JSON.stringify(userWithoutToken));
+                      console.log('Auth data stored');
+                    console.log('User role:', loginData.data.role);
+                    
+                    // Now test the APIs that manage-results uses
+                    const authToken = loginData.data.token;
+                      console.log('\\n2. Testing teacher classes API...');
+                    const classesRes = await fetch('/api/teacher/classes', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    console.log('Classes API status:', classesRes.status);
+                    if (classesRes.ok) {
+                        const classesData = await classesRes.json();
+                        console.log('Classes data:', JSON.stringify(classesData, null, 2));
+                    } else {
+                        console.error('Classes API error:', await classesRes.text());
+                    }
+                    
+                    console.log('\\n3. Testing teacher subjects API...');
+                    const subjectsRes = await fetch('/api/teacher/subjects', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    
+                    console.log('Subjects API status:', subjectsRes.status);
+                    if (subjectsRes.ok) {
+                        const subjectsData = await subjectsRes.json();
+                        console.log('Subjects data:', JSON.stringify(subjectsData, null, 2));
+                        
+                        // Test students API with first available class
+                        if (classesRes.ok) {
+                            const classesData = await classesRes.json();
+                            if (classesData.classes && classesData.classes.length > 0) {
+                                const firstClass = classesData.classes[0];
+                                  console.log('\\n4. Testing students API with class', firstClass.id);
+                                const studentsRes = await fetch(`/api/students?class_id=${firstClass.id}`, {
+                                    headers: { 'Authorization': `Bearer ${authToken}` }
+                                });
+                                
+                                console.log('Students API status:', studentsRes.status);
+                                if (studentsRes.ok) {
+                                    const studentsData = await studentsRes.json();
+                                    console.log('Students data:', JSON.stringify(studentsData, null, 2));
+                                } else {
+                                    console.error('Students API error:', await studentsRes.text());
+                                }
+                            }
+                        }
+                    } else {
+                        console.error('Subjects API error:', await subjectsRes.text());
+                    }
+                    
+                    console.log('\\n✅ All API tests complete. You can now navigate to /manage-results');
+                    console.log('Navigate to: http://localhost:3000/manage-results');
+                }
+            } else {
+                console.error('Login failed:', await loginResponse.text());
+            }
+        }
+    </script>
+</body>
+</html>

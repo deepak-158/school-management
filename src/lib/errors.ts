@@ -126,14 +126,16 @@ export function validateDateRange(startDate: string, endDate: string): void {
   }
 }
 
-export function validateMarks(obtained: number, max: number): void {
+export function validateMarks(obtained: number, max: number): { isValid: boolean; error?: string } {
   if (obtained < 0 || max < 0) {
-    throw new ValidationError('Marks cannot be negative');
+    return { isValid: false, error: 'Marks cannot be negative' };
   }
   
   if (obtained > max) {
-    throw new ValidationError('Obtained marks cannot exceed maximum marks');
+    return { isValid: false, error: 'Obtained marks cannot exceed maximum marks' };
   }
+  
+  return { isValid: true };
 }
 
 // Validate multiple required fields

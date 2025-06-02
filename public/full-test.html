@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Teacher Login Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #cce7ff; color: #004085; }
+        button { padding: 10px 20px; margin: 5px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; font-size: 12px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Full Teacher Login & Data Verification Test</h1>
+    
+    <div class="step info">
+        <h3>Step 1: Clear Session</h3>
+        <button onclick="clearSession()">Clear Session & Storage</button>
+        <div id="clear-result"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Step 2: Login as Teacher</h3>
+        <button onclick="loginAsTeacher()">Login as Teacher (ateacher001)</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Step 3: Verify Session Storage</h3>
+        <button onclick="checkSession()">Check Stored Session</button>
+        <div id="session-result"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Step 4: Test Teacher APIs</h3>
+        <button onclick="testTeacherAPIs()">Test Teacher Classes & Subjects</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Step 5: Test Students API</h3>
+        <button onclick="testStudentsAPI()">Test Students for First Class</button>
+        <div id="students-result"></div>
+    </div>
+
+    <div class="step info">
+        <h3>Step 6: Simulate Frontend Context</h3>
+        <button onclick="simulateFrontend()">Simulate React Auth Context Flow</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <script>
+        let teacherData = {};
+
+        function setResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = type;
+        }
+
+        function clearSession() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+            setResult('clear-result', '✅ Session cleared successfully', 'success');
+        }
+
+        async function loginAsTeacher() {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'ateacher001',
+                        password: 'teacher123'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    teacherData = result.data;
+                    
+                    // Store like AuthContext does
+                    localStorage.setItem('auth_token', teacherData.token);
+                    const { token, ...userWithoutToken } = teacherData;
+                    localStorage.setItem('user_data', JSON.stringify(userWithoutToken));
+                    
+                    setResult('login-result', 
+                        `✅ Login successful!<br>Role: ${teacherData.role}<br>Name: ${teacherData.first_name} ${teacherData.last_name}`, 
+                        'success'
+                    );
+                } else {
+                    setResult('login-result', `❌ Login failed: ${result.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                setResult('login-result', `❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        function checkSession() {
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
+            
+            if (token && userData) {
+                const parsedUser = JSON.parse(userData);
+                setResult('session-result', 
+                    `✅ Session found<br><pre>${JSON.stringify({token: token.substring(0, 20) + '...', ...parsedUser}, null, 2)}</pre>`, 
+                    'success'
+                );
+            } else {
+                setResult('session-result', '❌ No session found', 'error');
+            }
+        }
+
+        async function testTeacherAPIs() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    setResult('api-result', '❌ No token found. Please login first.', 'error');
+                    return;
+                }
+
+                const [classesRes, subjectsRes] = await Promise.all([
+                    fetch('/api/teacher/classes', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch('/api/teacher/subjects', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                if (classesRes.ok && subjectsRes.ok) {
+                    const classesData = await classesRes.json();
+                    const subjectsData = await subjectsRes.json();
+                    
+                    teacherData.classesData = classesData;
+                    teacherData.subjectsData = subjectsData;
+                    
+                    setResult('api-result', 
+                        `✅ Teacher APIs successful<br>Classes: ${classesData.classes?.length || 0}<br>Subjects: ${subjectsData.subjects?.length || 0}<br><pre>${JSON.stringify({classes: classesData.classes, subjects: subjectsData.subjects}, null, 2)}</pre>`, 
+                        'success'
+                    );
+                } else {
+                    const classesError = !classesRes.ok ? await classesRes.text() : 'OK';
+                    const subjectsError = !subjectsRes.ok ? await subjectsRes.text() : 'OK';
+                    setResult('api-result', 
+                        `❌ API errors<br>Classes (${classesRes.status}): ${classesError}<br>Subjects (${subjectsRes.status}): ${subjectsError}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                setResult('api-result', `❌ API test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStudentsAPI() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token || !teacherData.classesData?.classes?.length) {
+                    setResult('students-result', '❌ No token or classes data. Please run previous steps first.', 'error');
+                    return;
+                }
+
+                const firstClass = teacherData.classesData.classes[0];
+                const response = await fetch(`/api/students?class_id=${firstClass.id}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const studentsData = await response.json();
+                    setResult('students-result', 
+                        `✅ Students API successful for class ${firstClass.name}<br>Students count: ${studentsData.students?.length || 0}<br><pre>${JSON.stringify(studentsData.students, null, 2)}</pre>`, 
+                        'success'
+                    );
+                } else {
+                    const error = await response.text();
+                    setResult('students-result', `❌ Students API failed (${response.status}): ${error}`, 'error');
+                }
+            } catch (error) {
+                setResult('students-result', `❌ Students API error: ${error.message}`, 'error');
+            }
+        }
+
+        async function simulateFrontend() {
+            try {
+                // Simulate what AuthContext does on mount
+                const token = localStorage.getItem('auth_token');
+                const userData = localStorage.getItem('user_data');
+                
+                if (!token || !userData) {
+                    setResult('frontend-result', '❌ No session data for frontend simulation', 'error');
+                    return;
+                }
+
+                const parsedUser = JSON.parse(userData);
+                const userWithToken = { ...parsedUser, token };
+                
+                console.log('🔍 Simulated AuthContext: Setting user:', userWithToken);
+                
+                // Simulate the useEffect in manage-results page
+                let resultHTML = '✅ Frontend simulation:<br>';
+                resultHTML += `User role detected: ${userWithToken.role}<br>`;
+                
+                if (userWithToken.role === 'teacher') {
+                    resultHTML += '🔵 Would call fetchTeacherData()<br>';
+                    resultHTML += '✅ No race condition - only teacher APIs would be called<br>';
+                } else if (userWithToken.role === 'principal') {
+                    resultHTML += '🔴 Would call fetchPrincipalData()<br>';
+                } else {
+                    resultHTML += '⚠️ Unknown role<br>';
+                }
+                
+                setResult('frontend-result', resultHTML, 'success');
+                
+            } catch (error) {
+                setResult('frontend-result', `❌ Frontend simulation error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

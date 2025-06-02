@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         FROM students s
         LEFT JOIN classes c ON s.class_id = c.id
         WHERE s.user_id = ?
-      `).get(decoded.userId) as any;
+      `).get(decoded.id) as any;
 
       if (student) {
         profile = {
@@ -58,11 +58,10 @@ export async function GET(request: NextRequest) {
           guardian_name: student.guardian_name,
           guardian_phone: student.guardian_phone,
           guardian_email: student.guardian_email,
-          blood_group: student.blood_group,
-        };
+          blood_group: student.blood_group,        };
       }
     } else if (decoded.role === 'teacher') {
-      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
+      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
       
       if (teacher) {
         // Get subjects taught by teacher
@@ -118,17 +117,14 @@ export async function PUT(request: NextRequest) {
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(
-      data.first_name,
-      data.last_name, 
+      data.first_name,      data.last_name, 
       data.phone,
       data.address,
       data.date_of_birth,
-      decoded.userId
-    );
-
-    // Update role-specific information
+      decoded.id
+    );    // Update role-specific information
     if (decoded.role === 'student') {
-      const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.userId) as any;
+      const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.id) as any;
       if (student) {
         db.prepare(`
           UPDATE students 
@@ -141,22 +137,20 @@ export async function PUT(request: NextRequest) {
           data.guardian_name,
           data.guardian_phone,
           data.guardian_email,
-          data.blood_group,
-          decoded.userId
+          data.blood_group,          decoded.id
         );
       }
     } else if (decoded.role === 'teacher') {
-      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
+      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
       if (teacher) {
         db.prepare(`
           UPDATE teachers 
           SET department = COALESCE(?, department),
               qualification = COALESCE(?, qualification)
           WHERE user_id = ?
-        `).run(
-          data.department,
+        `).run(          data.department,
           data.qualification,
-          decoded.userId
+          decoded.id
         );
       }
     }

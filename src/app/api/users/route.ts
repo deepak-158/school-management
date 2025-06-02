@@ -229,10 +229,8 @@ export async function DELETE(request: NextRequest) {
         success: false,
         message: 'User not found'
       }, { status: 404 });
-    }
-
-    // Prevent deleting the current user (self-deletion)
-    if (parseInt(userId) === decoded.userId) {
+    }    // Prevent deleting the current user (self-deletion)
+    if (parseInt(userId) === decoded.id) {
       return NextResponse.json({ 
         success: false,
         message: 'Cannot delete your own account'

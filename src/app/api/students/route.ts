@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
     
     let students = [];
 
-    if (decoded.role === 'principal') {
-      // Principal sees all students or students from specific class
+    if (decoded.role === 'principal') {      // Principal sees all students or students from specific class
       let query = `
-        SELECT s.*, c.name as class_name, u.username
+        SELECT s.*, c.name as class_name, u.username, u.first_name, u.last_name,
+               (u.first_name || ' ' || u.last_name) as full_name
         FROM students s
         JOIN classes c ON s.class_id = c.id
         JOIN users u ON s.user_id = u.id
@@ -38,19 +38,16 @@ export async function GET(request: NextRequest) {
         params.push(classId);
       }
       
-      query += ' ORDER BY c.name, s.full_name';
+      query += ' ORDER BY c.name, u.first_name, u.last_name';
       
-      students = db.prepare(query).all(...params);
-
-    } else if (decoded.role === 'teacher') {
+      students = db.prepare(query).all(...params);    } else if (decoded.role === 'teacher') {
       // Teacher sees students from their classes
-      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
+      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
       if (!teacher) {
         throw new NotFoundError('Teacher profile not found');
-      }
-
-      let query = `
-        SELECT DISTINCT s.*, c.name as class_name, u.username
+      }      let query = `
+        SELECT DISTINCT s.*, c.name as class_name, u.username, u.first_name, u.last_name,
+               (u.first_name || ' ' || u.last_name) as full_name
         FROM students s
         JOIN classes c ON s.class_id = c.id
         JOIN users u ON s.user_id = u.id
@@ -65,19 +62,18 @@ export async function GET(request: NextRequest) {
         params.push(classId);
       }
       
-      query += ' ORDER BY c.name, s.full_name';
+      query += ' ORDER BY c.name, u.first_name, u.last_name';
       
-      students = db.prepare(query).all(...params);
-
-    } else if (decoded.role === 'student') {
+      students = db.prepare(query).all(...params);    } else if (decoded.role === 'student') {
       // Student sees only themselves
       students = db.prepare(`
-        SELECT s.*, c.name as class_name, u.username
+        SELECT s.*, c.name as class_name, u.username, u.first_name, u.last_name,
+               (u.first_name || ' ' || u.last_name) as full_name
         FROM students s
         JOIN classes c ON s.class_id = c.id
         JOIN users u ON s.user_id = u.id
         WHERE s.user_id = ?
-      `).all(decoded.userId);
+      `).all(decoded.id);
     } else {
       throw new AuthorizationError('Insufficient permissions to access student data');
     }

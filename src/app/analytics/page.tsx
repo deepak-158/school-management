@@ -32,10 +32,9 @@ interface AnalyticsData {
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'semester'>('month');
+  const [timeRange, setTimeRange] = useState<'week' | 'month'>('month');
 
   useEffect(() => {
     // Redirect if not principal
@@ -50,7 +49,12 @@ export default function AnalyticsPage() {
       setError(null);
       
       // Fetch real data from API
-      const response = await fetch('/api/analytics');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/analytics', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -228,13 +232,11 @@ ${analytics?.leaveRequests.map(data => `${data.month}: Approved ${data.approved}
             </p>
           </div>
           <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
+            value={timeRange}            onChange={(e) => setTimeRange(e.target.value as any)}
             className="px-4 py-2 border border-gray-300 rounded-md bg-white"
           >
             <option value="week">This Week</option>
             <option value="month">This Month</option>
-            <option value="semester">This Semester</option>
           </select>
         </div>
 

@@ -21,11 +21,9 @@ export async function GET(request: NextRequest) {
     const date = url.searchParams.get('date');
     const classId = url.searchParams.get('class_id');
     
-    let attendance = [];
-
-    if (decoded.role === 'student') {
+    let attendance = [];    if (decoded.role === 'student') {
       // Student sees their own attendance
-      const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.userId) as any;
+      const student = db.prepare('SELECT * FROM students WHERE user_id = ?').get(decoded.id) as any;
       if (!student) {
         throw new NotFoundError('Student profile not found');
       }
@@ -38,7 +36,7 @@ export async function GET(request: NextRequest) {
         WHERE s.user_id = ?
       `;
       
-      const params = [decoded.userId];
+      const params = [decoded.id];
       
       if (date) {
         query += ' AND a.date = ?';
@@ -47,11 +45,9 @@ export async function GET(request: NextRequest) {
       
       query += ' ORDER BY a.date DESC LIMIT 100';
       
-      attendance = db.prepare(query).all(...params);
-
-    } else if (decoded.role === 'teacher') {
+      attendance = db.prepare(query).all(...params);    } else if (decoded.role === 'teacher') {
       // Teacher sees attendance for their classes
-      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
+      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
       if (!teacher) {
         throw new NotFoundError('Teacher profile not found');
       }

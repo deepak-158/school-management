@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .results { background-color: #f8f9fa; padding: 10px; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>School Management System - Frontend Authentication Test</h1>
+    
+    <div class="section">
+        <h2>Step 1: Login Test</h2>
+        <button onclick="testLogin('principal', 'principal', 'principal123')">Login as Principal</button>
+        <button onclick="testLogin('teacher', 'ateacher001', 'teacher123')">Login as Teacher</button>
+        <button onclick="testLogin('student', 'astudent001', 'student123')">Login as Student</button>
+        <div id="loginResults" class="results"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: API Tests (After Login)</h2>
+        <button onclick="testStudentsAPI()">Test /api/students</button>
+        <button onclick="testResultsAPI()">Test /api/results</button>
+        <button onclick="testSubjectsAPI()">Test /api/teacher/subjects</button>
+        <div id="apiResults" class="results"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 3: localStorage Check</h2>
+        <button onclick="checkLocalStorage()">Check Stored Data</button>
+        <button onclick="clearLocalStorage()">Clear Storage</button>
+        <div id="storageResults" class="results"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentToken = null;
+
+        async function testLogin(role, username, password) {
+            const loginResults = document.getElementById('loginResults');
+            loginResults.innerHTML = `Testing login for ${role}...`;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    currentUser = result.data;
+                    currentToken = result.data.token;
+                    
+                    // Simulate frontend behavior
+                    localStorage.setItem('auth_token', currentToken);
+                    const { token, ...userWithoutToken } = result.data;
+                    localStorage.setItem('user_data', JSON.stringify(userWithoutToken));
+                    
+                    loginResults.innerHTML = `
+                        <div class="success">
+                            ✅ Login successful for ${role}<br>
+                            User ID: ${result.data.id}<br>
+                            Role: ${result.data.role}<br>
+                            Token: ${currentToken.substring(0, 50)}...
+                        </div>
+                    `;
+                } else {
+                    loginResults.innerHTML = `
+                        <div class="error">
+                            ❌ Login failed for ${role}<br>
+                            Error: ${JSON.stringify(result, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loginResults.innerHTML = `
+                    <div class="error">
+                        ❌ Login error for ${role}: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testStudentsAPI() {
+            const apiResults = document.getElementById('apiResults');
+            
+            if (!currentToken) {
+                apiResults.innerHTML = '<div class="error">❌ Please login first</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/students', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    apiResults.innerHTML = `
+                        <div class="success">
+                            ✅ Students API successful<br>
+                            Found: ${result.students?.length || 0} students<br>
+                            Sample: ${result.students?.[0] ? JSON.stringify(result.students[0], null, 2) : 'None'}
+                        </div>
+                    `;
+                } else {
+                    apiResults.innerHTML = `
+                        <div class="error">
+                            ❌ Students API failed: ${response.status}<br>
+                            Error: ${JSON.stringify(result, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                apiResults.innerHTML = `
+                    <div class="error">
+                        ❌ Students API error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testResultsAPI() {
+            const apiResults = document.getElementById('apiResults');
+            
+            if (!currentToken) {
+                apiResults.innerHTML = '<div class="error">❌ Please login first</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/results', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    apiResults.innerHTML = `
+                        <div class="success">
+                            ✅ Results API successful<br>
+                            Found: ${result.results?.length || 0} results<br>
+                            Stats: ${result.stats ? 'Present' : 'Missing'}
+                        </div>
+                    `;
+                } else {
+                    apiResults.innerHTML = `
+                        <div class="error">
+                            ❌ Results API failed: ${response.status}<br>
+                            Error: ${JSON.stringify(result, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                apiResults.innerHTML = `
+                    <div class="error">
+                        ❌ Results API error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testSubjectsAPI() {
+            const apiResults = document.getElementById('apiResults');
+            
+            if (!currentToken) {
+                apiResults.innerHTML = '<div class="error">❌ Please login first</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/teacher/subjects', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    apiResults.innerHTML = `
+                        <div class="success">
+                            ✅ Teacher Subjects API successful<br>
+                            Found: ${result.subjects?.length || 0} subjects
+                        </div>
+                    `;
+                } else {
+                    apiResults.innerHTML = `
+                        <div class="error">
+                            ❌ Teacher Subjects API failed: ${response.status}<br>
+                            Error: ${JSON.stringify(result, null, 2)}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                apiResults.innerHTML = `
+                    <div class="error">
+                        ❌ Teacher Subjects API error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function checkLocalStorage() {
+            const storageResults = document.getElementById('storageResults');
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
+            
+            storageResults.innerHTML = `
+                <div>
+                    <strong>Auth Token:</strong> ${token ? token.substring(0, 50) + '...' : 'Not found'}<br>
+                    <strong>User Data:</strong> ${userData || 'Not found'}<br>
+                    <strong>Current User:</strong> ${currentUser ? JSON.stringify(currentUser, null, 2) : 'None'}
+                </div>
+            `;
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
+            currentUser = null;
+            currentToken = null;
+            
+            const storageResults = document.getElementById('storageResults');
+            storageResults.innerHTML = '<div class="success">✅ Storage cleared</div>';
+        }
+
+        // Check initial state
+        window.onload = function() {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

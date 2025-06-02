@@ -467,11 +467,10 @@ export async function seedDatabase() {
             notes
           );        }
       }
-    }// Create comprehensive results/marks
-    console.log('Creating student results...');
+    }// Create comprehensive results/marks    console.log('Creating student results...');
     const resultStmt = db.prepare(`
-      INSERT INTO results (student_id, subject_id, exam_type, max_marks, obtained_marks, grade, exam_date, remarks, teacher_id, academic_year, semester)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO results (student_id, subject_id, exam_type, max_marks, obtained_marks, grade, exam_date, remarks, teacher_id, academic_year)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const examTypes = ['Unit Test 1', 'Unit Test 2', 'Mid Term', 'Final Term'];
@@ -499,8 +498,7 @@ export async function seedDatabase() {
           examDate.setDate(examDate.getDate() - Math.floor(Math.random() * 90)); // Random date in last 3 months
           
           const remarks = grade === 'A+' ? 'Excellent performance' : (grade === 'D' ? 'Needs improvement' : null);
-          
-          resultStmt.run(
+            resultStmt.run(
             studentDbRecord.id,
             subjectMap.get(subjectCode),
             examType,
@@ -510,8 +508,7 @@ export async function seedDatabase() {
             examDate.toISOString().split('T')[0],
             remarks,
             teacherRecordMap.get(teacher1.id), // Use first teacher as examiner
-            '2024-2025',
-            examType.includes('Mid') || examType.includes('Final') ? 'Semester 1' : 'Term 1'
+            '2024-2025'
           );
         }
       }
@@ -579,20 +576,17 @@ export async function seedDatabase() {
     }
 
     // Create sample leave requests
-    console.log('Creating sample leave requests...');
-    const leaveRequestStmt = db.prepare(`
+    console.log('Creating sample leave requests...');    const leaveRequestStmt = db.prepare(`
       INSERT INTO leave_requests (
         user_id, leave_type, start_date, end_date, reason, 
-        status, created_at, approved_by, approval_date, approval_comments
+        status, created_at, approved_by, approved_at, approver_notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const currentDate = new Date().toISOString();
     const futureDate1 = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const futureDate2 = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const futureDate3 = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const leaveRequests = [
+    const futureDate3 = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];    const leaveRequests = [
       // Student leave requests
       {
         user_id: student1.id,
@@ -603,8 +597,8 @@ export async function seedDatabase() {
         status: 'pending',
         created_at: currentDate,
         approved_by: null,
-        approval_date: null,
-        approval_comments: null
+        approved_at: null,
+        approver_notes: null
       },
       {
         user_id: student2.id,
@@ -615,8 +609,8 @@ export async function seedDatabase() {
         status: 'approved',
         created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         approved_by: teacher1.id, // Class teacher approval
-        approval_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        approval_comments: 'Approved for family function. Please catch up on missed lessons.'
+        approved_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        approver_notes: 'Approved for family function. Please catch up on missed lessons.'
       },
       {
         user_id: student3.id,
@@ -627,8 +621,8 @@ export async function seedDatabase() {
         status: 'approved',
         created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         approved_by: principal.id, // Principal approval
-        approval_date: currentDate,
-        approval_comments: 'Approved. Medical appointments are important.'
+        approved_at: currentDate,
+        approver_notes: 'Approved. Medical appointments are important.'
       },
       // Teacher leave requests
       {
@@ -640,8 +634,8 @@ export async function seedDatabase() {
         status: 'pending',
         created_at: currentDate,
         approved_by: null,
-        approval_date: null,
-        approval_comments: null
+        approved_at: null,
+        approver_notes: null
       },
       {
         user_id: teacher3.id,
@@ -652,12 +646,10 @@ export async function seedDatabase() {
         status: 'approved',
         created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
         approved_by: principal.id, // Principal approves teacher leaves
-        approval_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        approval_comments: 'Approved. Please ensure lesson plans are prepared for substitute teacher.'
+        approved_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        approver_notes: 'Approved. Please ensure lesson plans are prepared for substitute teacher.'
       }
-    ];
-
-    for (const request of leaveRequests) {
+    ];    for (const request of leaveRequests) {
       leaveRequestStmt.run(
         request.user_id,
         request.leave_type,
@@ -667,8 +659,8 @@ export async function seedDatabase() {
         request.status,
         request.created_at,
         request.approved_by,
-        request.approval_date,
-        request.approval_comments
+        request.approved_at,
+        request.approver_notes
       );
     }
 

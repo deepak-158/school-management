@@ -14,10 +14,8 @@ export async function GET(request: NextRequest) {
     const decoded = verifyToken(token);
     if (!decoded) {
       throw new AuthenticationError('Invalid or expired token');
-    }
-
-    const db = getDatabase();
-    let classes = [];
+    }    const db = getDatabase();
+    let classes: any[] = [];
 
     if (decoded.role === 'principal') {
       // Principal sees all classes with class teacher info

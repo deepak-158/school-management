@@ -49,19 +49,31 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({});
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
+  const [loading, setLoading] = useState(true);  useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         // Fetch dashboard stats
-        const statsResponse = await fetch('/api/dashboard/stats');
+        const statsResponse = await fetch('/api/dashboard/stats', {
+          headers
+        });
         if (statsResponse.ok) {
           const statsResult = await statsResponse.json();
           setStats(statsResult.stats || {});
         }
 
         // Fetch announcements
-        const announcementsResponse = await fetch('/api/dashboard/announcements');
+        const announcementsResponse = await fetch('/api/dashboard/announcements', {
+          headers
+        });
         if (announcementsResponse.ok) {
           const announcementsResult = await announcementsResponse.json();
           setAnnouncements(announcementsResult.announcements || []);

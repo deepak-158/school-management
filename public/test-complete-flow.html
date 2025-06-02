@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Complete Flow Test</title>
+</head>
+<body>
+    <h1>Complete Frontend Flow Test</h1>
+    <button onclick="runCompleteTest()">Run Complete Flow Test</button>
+    <pre id="output"></pre>
+    
+    <script>
+        // Capture console.log output
+        const originalLog = console.log;
+        const output = document.getElementById('output');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            output.textContent += args.join(' ') + '\n';
+        };
+        
+        async function runCompleteTest() {
+            output.textContent = '';
+            
+            // Include the test script
+            const script = document.createElement('script');
+            script.src = '/test-complete-flow.js';
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html>

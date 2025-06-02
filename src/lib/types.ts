@@ -122,12 +122,10 @@ export interface Result {
   exam_type: string;
   exam_date?: string;
   max_marks: number;
-  obtained_marks: number;
-  grade?: string;
+  obtained_marks: number;  grade?: string;
   remarks?: string;
   teacher_id: number;
   academic_year: string;
-  semester?: string;
   created_at: string;
   // Relations
   student?: Student;

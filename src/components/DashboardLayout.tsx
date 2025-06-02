@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       { name: 'Class Assignments', href: '/class-assignments', icon: Users },
       { name: 'Timetable', href: '/timetable', icon: Calendar },
       { name: 'Attendance Reports', href: '/attendance', icon: ClipboardList },
-      { name: 'Results Overview', href: '/results', icon: BarChart3 },
+      { name: 'Manage Results', href: '/manage-results', icon: BarChart3 },
       { name: 'Leave Approvals', href: '/leave-approvals', icon: FileCheck },
       { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     ];

@@ -15,12 +15,12 @@ interface TimetableSlot {
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const TIME_SLOTS = [
-  '09:00-10:00',
-  '10:00-11:00',
-  '11:15-12:15',
-  '12:15-13:15',
-  '14:00-15:00',
-  '15:00-16:00'
+  '09:00-09:45',
+  '09:45-10:30',
+  '10:45-11:30',
+  '11:30-12:15',
+  '13:00-13:45',
+  '13:45-14:30'
 ];
 
 export default function TimetablePage() {
@@ -28,22 +28,26 @@ export default function TimetablePage() {
   const [timetable, setTimetable] = useState<TimetableSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
-  const [classes, setClasses] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchTimetable();
-    if (user?.role === 'principal' || user?.role === 'teacher') {
-      fetchClasses();
+  const [classes, setClasses] = useState<any[]>([]);  useEffect(() => {
+    if (user) {
+      fetchTimetable();
+      if (user.role === 'principal' || user.role === 'teacher') {
+        fetchClasses();
+      }
     }
-  }, [selectedClass]);
-
-  const fetchTimetable = async () => {
+  }, [selectedClass, user]);  const fetchTimetable = async () => {
     try {
       const url = selectedClass 
         ? `/api/timetable?class_id=${selectedClass}`
         : '/api/timetable';
       
-      const response = await fetch(url);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         setTimetable(data.timetable);
@@ -54,10 +58,14 @@ export default function TimetablePage() {
       setLoading(false);
     }
   };
-
   const fetchClasses = async () => {
     try {
-      const response = await fetch('/api/classes');
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/classes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setClasses(data.classes);

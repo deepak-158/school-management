@@ -18,7 +18,6 @@ interface Result {
   remarks?: string;
   teacher_name: string;
   academic_year: string;
-  semester?: string;
   created_at: string;
 }
 
@@ -29,32 +28,43 @@ interface ResultsStats {
   lowestMarks: number;
   totalSubjects: number;
   passedExams: number;
+  classRank?: number;
+  totalStudentsInClass?: number;
+  classPercentile?: number;
+  // Principal analytics
+  totalResults?: number;
+  totalStudents?: number;
+  overallAverage?: number;
+  classPerformance?: any[];
+  subjectPerformance?: any[];
+  topPerformers?: any[];
 }
 
 export default function ResultsPage() {
   const { user } = useAuth();
   const [results, setResults] = useState<Result[]>([]);
   const [stats, setStats] = useState<ResultsStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2024-2025');
-  const [selectedSemester, setSelectedSemester] = useState('all');
-  const [error, setError] = useState('');
-
-  useEffect(() => {
+  const [loading, setLoading] = useState(true);  const [selectedAcademicYear, setSelectedAcademicYear] = useState('2024-2025');
+  const [selectedExamType, setSelectedExamType] = useState('all');
+  const [error, setError] = useState('');  useEffect(() => {
     if (user) {
       fetchResults();
     }
-  }, [user, selectedAcademicYear, selectedSemester]);
-
-  const fetchResults = async () => {
+  }, [user, selectedAcademicYear, selectedExamType]);  const fetchResults = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         academic_year: selectedAcademicYear,
-        ...(selectedSemester !== 'all' && { semester: selectedSemester })
+        ...(selectedExamType !== 'all' && { exam_type: selectedExamType })
       });
       
-      const response = await fetch(`/api/results?${params}`);
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`/api/results?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch results');
       }
@@ -114,9 +124,7 @@ export default function ResultsPage() {
           <div className="bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg p-6 text-white">
             <h1 className="text-2xl font-bold mb-2">Academic Results</h1>
             <p className="text-purple-100">Track your academic performance and progress</p>
-          </div>
-
-          {/* Filters */}
+          </div>          {/* Filters */}
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter Results</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,28 +140,27 @@ export default function ResultsPage() {
                 >
                   <option value="2024-2025">2024-2025</option>
                   <option value="2023-2024">2023-2024</option>
-                  <option value="2022-2023">2022-2023</option>
+                  <option value="2025-2026">2025-2026</option>
                 </select>
               </div>
               <div>
-                <label htmlFor="semester" className="block text-sm font-medium text-gray-700 mb-2">
-                  Semester
+                <label htmlFor="exam-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  Exam Type
                 </label>
                 <select
-                  id="semester"
-                  value={selectedSemester}
-                  onChange={(e) => setSelectedSemester(e.target.value)}
+                  id="exam-type"
+                  value={selectedExamType}
+                  onChange={(e) => setSelectedExamType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="all">All Semesters</option>
-                  <option value="1">Semester 1</option>
-                  <option value="2">Semester 2</option>
+                  <option value="all">All Exam Types</option>
+                  <option value="First Term Exam">First Term Exam (100 marks)</option>
+                  <option value="Second Term Exam">Second Term Exam (100 marks)</option>
+                  <option value="Final Exam">Final Exam (100 marks)</option>
                 </select>
               </div>
             </div>
-          </div>
-
-          {/* Stats Cards */}
+          </div>          {/* Stats Cards */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
@@ -208,6 +215,155 @@ export default function ResultsPage() {
                     <p className="text-2xl font-bold text-gray-900">{stats.passedExams}</p>
                   </div>
                   <Award className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Grand Total Rankings for Students */}
+          {user?.role === 'student' && (
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Academic Rankings</h2>
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
+                <p className="text-sm text-indigo-700 mb-2">
+                  Rankings are calculated based on your grand total marks across all three standardized exams:
+                </p>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-white rounded-lg p-3 border border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-600">First Term</p>
+                    <p className="text-lg font-bold text-indigo-900">100 marks</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-600">Second Term</p>
+                    <p className="text-lg font-bold text-indigo-900">100 marks</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-indigo-100">
+                    <p className="text-xs font-medium text-indigo-600">Final Exam</p>
+                    <p className="text-lg font-bold text-indigo-900">100 marks</p>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <p className="text-sm font-medium text-indigo-800">
+                    Total Possible: <span className="text-lg">300 marks per subject</span>
+                  </p>
+                  <button 
+                    onClick={() => window.open('/rankings', '_blank')}
+                    className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  >
+                    View Detailed Rankings
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Class Ranking Section for Students */}
+          {user?.role === 'student' && stats && stats.classRank && (
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Class Ranking</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-blue-700 mb-1">Class Rank</p>
+                      <p className="text-2xl font-bold text-blue-900">#{stats.classRank}</p>
+                    </div>
+                    <Award className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-700 mb-1">Class Percentile</p>
+                      <p className="text-2xl font-bold text-green-900">{stats.classPercentile}%</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-purple-700 mb-1">Total Students</p>
+                      <p className="text-2xl font-bold text-purple-900">{stats.totalStudentsInClass}</p>
+                    </div>
+                    <User className="h-8 w-8 text-purple-600" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Principal Analytics */}
+          {user?.role === 'principal' && stats && stats.classPerformance && (
+            <div className="space-y-6">
+              {/* Class Performance */}
+              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Class Performance Overview</h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average %</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Exams</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {stats.classPerformance.map((classData: any) => (
+                        <tr key={classData.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {classData.class_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {classData.student_count}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {Math.round(classData.avg_percentage)}%
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {classData.total_exams}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                                <div 
+                                  className={`h-2 rounded-full ${
+                                    classData.avg_percentage >= 80 ? 'bg-green-500' :
+                                    classData.avg_percentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${Math.min(classData.avg_percentage, 100)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm text-gray-500">{Math.round(classData.avg_percentage)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Top Performers */}
+              <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Performers</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {stats.topPerformers?.slice(0, 6).map((student: any, index: number) => (
+                    <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-900">{student.student_name}</h3>
+                        <span className="text-lg font-bold text-yellow-600">#{index + 1}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>Class: {student.class_name}</p>
+                        <p>Roll No: {student.roll_number}</p>
+                        <p>Average: <span className="font-semibold text-green-600">{Math.round(student.avg_percentage)}%</span></p>
+                        <p>Total Exams: {student.total_exams}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

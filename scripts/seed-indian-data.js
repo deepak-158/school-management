@@ -508,10 +508,9 @@ function seedResults() {
   
   const examTypes = ['Unit Test 1', 'Unit Test 2', 'Mid Term', 'Final Exam'];
   const maxMarks = [25, 25, 50, 100]; // Corresponding max marks
-  
-  const insertResult = db.prepare(`
-    INSERT INTO results (student_id, subject_id, exam_type, exam_date, max_marks, obtained_marks, grade, teacher_id, academic_year, semester)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    const insertResult = db.prepare(`
+    INSERT INTO results (student_id, subject_id, exam_type, exam_date, max_marks, obtained_marks, grade, teacher_id, academic_year)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let resultsCount = 0;
@@ -533,10 +532,9 @@ function seedResults() {
         
         const examDate = new Date();
         examDate.setMonth(examDate.getMonth() - (4 - index)); // Spread exams over months
-        
-        insertResult.run(
+          insertResult.run(
           student.id, subject.id, examType, examDate.toISOString().split('T')[0],
-          maxMark, obtained, grade, 2, '2024-25', 'Semester 1'
+          maxMark, obtained, grade, 2, '2024-25'
         );
         resultsCount++;
       });

@@ -4,33 +4,44 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
+    // Check both Authorization header and cookies
+    const token = request.headers.get('authorization')?.replace('Bearer ', '') || request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
     const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== 'teacher') {
+    if (!decoded || (decoded.role !== 'teacher' && decoded.role !== 'principal')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const db = getDatabase();
     
-    // Get teacher ID
-    const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.userId) as any;
-    if (!teacher) {
-      return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
-    }
+    let classes = [];
 
-    // Get classes taught by this teacher
-    const classes = db.prepare(`
-      SELECT DISTINCT c.id, c.name, c.section
-      FROM classes c
-      JOIN class_subjects cs ON c.id = cs.class_id
-      JOIN teacher_subjects ts ON cs.subject_id = ts.subject_id
-      WHERE ts.teacher_id = ?
-      ORDER BY c.name, c.section
-    `).all(teacher.id) as any[];
+    if (decoded.role === 'principal') {
+      // Principal can see all classes
+      classes = db.prepare(`
+        SELECT id, name, section
+        FROM classes
+        ORDER BY name, section
+      `).all();
+    } else {
+      // Get teacher ID
+      const teacher = db.prepare('SELECT * FROM teachers WHERE user_id = ?').get(decoded.id) as any;
+      if (!teacher) {
+        return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
+      }
+
+      // Get classes taught by this teacher using the corrected query
+      classes = db.prepare(`
+        SELECT DISTINCT c.id, c.name, c.section
+        FROM classes c
+        JOIN teacher_subjects ts ON c.id = ts.class_id
+        WHERE ts.teacher_id = ?
+        ORDER BY c.name, c.section
+      `).all(teacher.id);
+    }
 
     return NextResponse.json({ classes });
   } catch (error) {

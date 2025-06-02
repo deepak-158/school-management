@@ -97,11 +97,10 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials:</h3>
-          <div className="text-xs text-gray-600 space-y-1">
-            <p><strong>Principal:</strong> username=principal, password=principal123</p>
-            <p><strong>Teacher:</strong> username=teacher1, password=teacher123</p>
-            <p><strong>Student:</strong> username=student1, password=student123</p>
+          <h3 className="text-sm font-medium text-gray-900 mb-2">Demo Credentials:</h3>          <div className="text-xs text-gray-600 space-y-1">
+            <p><strong>Principal:</strong> username=principal, password=password123</p>
+            <p><strong>Teacher:</strong> username=ateacher001, password=teacher123</p>
+            <p><strong>Student:</strong> username=astudent001, password=student123</p>
           </div>
         </div>
       </div>
